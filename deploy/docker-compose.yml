@@ -16,7 +16,8 @@ services:
   # Sub2API Application
   # ===========================================================================
   sub2api:
-    image: weishaw/sub2api:latest
+    #image: weishaw/sub2api:latest
+    image: sgccr.ccs.tencentyun.com/sub2api/sub2api:v20260403222600
     container_name: sub2api
     restart: unless-stopped
     ulimits:
