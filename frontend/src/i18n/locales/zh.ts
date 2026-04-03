@@ -933,7 +933,7 @@ export default {
     // Dashboard
     dashboard: {
       title: '管理控制台',
-      description: '系统概览与统计数据',
+      description: '这是系统概览与统计数据',
       apiKeys: 'API 密钥',
       totalApiKeys: 'API 密钥总数',
       activeApiKeys: '活跃密钥',
