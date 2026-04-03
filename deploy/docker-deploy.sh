@@ -123,10 +123,10 @@ main() {
     ###fi
 
     # Create data directories
-    print_info "Creating data directories..."
-    mkdir -p data
+    #print_info "Creating data directories..."
+    #mkdir -p data
     ### mkdir -p data postgres_data redis_data
-    print_success "Created data directories"
+    #print_success "Created data directories"
 
     # Set secure permissions for .env file (readable/writable only by owner)
     chmod 600 .env
@@ -149,7 +149,7 @@ main() {
     echo "  docker-compose.yml        - Docker Compose configuration"
     echo "  .env                      - Environment variables (generated secrets)"
     echo "  .env.example              - Example template (for reference)"
-    echo "  data/                     - Application data (will be created on first run)"
+    #echo "  data/                     - Application data (will be created on first run)"
     #echo "  postgres_data/            - PostgreSQL data"
     #echo "  redis_data/               - Redis data"
     echo ""
