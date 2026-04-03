@@ -10,7 +10,7 @@
 
 **AI API 网关平台 - 订阅配额分发管理**
 
-[English](README.md) | 中文22
+[English](README.md) | 中文3
 
 </div>
 
