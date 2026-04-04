@@ -98,12 +98,12 @@ func TestChatCompletionsToResponses_ToolCalls(t *testing.T) {
 
 	// Check function_call item
 	assert.Equal(t, "function_call", items[1].Type)
-	assert.Equal(t, "call_1", items[1].CallID)
+	assert.Equal(t, "fc_call_1", items[1].CallID)
 	assert.Equal(t, "ping", items[1].Name)
 
 	// Check function_call_output item
 	assert.Equal(t, "function_call_output", items[2].Type)
-	assert.Equal(t, "call_1", items[2].CallID)
+	assert.Equal(t, "fc_call_1", items[2].CallID)
 	assert.Equal(t, "pong", items[2].Output)
 
 	// Check tools

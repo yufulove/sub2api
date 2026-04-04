@@ -41,7 +41,7 @@ func ResponsesToChatCompletions(resp *ResponsesResponse, model string) *ChatComp
 			}
 		case "function_call":
 			toolCalls = append(toolCalls, ChatToolCall{
-				ID:   item.CallID,
+				ID:   fromResponsesCallID(item.CallID),
 				Type: "function",
 				Function: ChatFunctionCall{
 					Name:      item.Name,
@@ -243,7 +243,7 @@ func resToChatHandleOutputItemAdded(evt *ResponsesStreamEvent, state *ResponsesE
 	return []ChatCompletionsChunk{makeChatDeltaChunk(state, ChatDelta{
 		ToolCalls: []ChatToolCall{{
 			Index: &idx,
-			ID:    evt.Item.CallID,
+			ID:    fromResponsesCallID(evt.Item.CallID),
 			Type:  "function",
 			Function: ChatFunctionCall{
 				Name: evt.Item.Name,

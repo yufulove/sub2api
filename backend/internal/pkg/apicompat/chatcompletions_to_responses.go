@@ -191,12 +191,13 @@ func chatAssistantToResponses(m ChatMessage) ([]ResponsesInputItem, error) {
 		if args == "" {
 			args = "{}"
 		}
+		fcID := toResponsesCallID(tc.ID)
 		items = append(items, ResponsesInputItem{
 			Type:      "function_call",
-			CallID:    tc.ID,
+			CallID:    fcID,
 			Name:      tc.Function.Name,
 			Arguments: args,
-			ID:        tc.ID,
+			ID:        fcID,
 		})
 	}
 
@@ -215,7 +216,7 @@ func chatToolToResponses(m ChatMessage) ([]ResponsesInputItem, error) {
 	}
 	return []ResponsesInputItem{{
 		Type:   "function_call_output",
-		CallID: m.ToolCallID,
+		CallID: toResponsesCallID(m.ToolCallID),
 		Output: output,
 	}}, nil
 }

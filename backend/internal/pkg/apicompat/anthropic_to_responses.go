@@ -294,14 +294,11 @@ func toResponsesCallID(id string) string {
 }
 
 // fromResponsesCallID reverses toResponsesCallID, stripping the "fc_" prefix
-// that was added during request conversion.
+// that was added during request conversion. This is safe because
+// toResponsesCallID already guards against double-prefixing.
 func fromResponsesCallID(id string) string {
 	if after, ok := strings.CutPrefix(id, "fc_"); ok {
-		// Only strip if the remainder doesn't look like it was already "fc_" prefixed.
-		// E.g. "fc_toolu_xxx" → "toolu_xxx", "fc_call_xxx" → "call_xxx"
-		if strings.HasPrefix(after, "toolu_") || strings.HasPrefix(after, "call_") {
-			return after
-		}
+		return after
 	}
 	return id
 }
