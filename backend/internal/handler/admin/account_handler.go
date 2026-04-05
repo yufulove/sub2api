@@ -1791,6 +1791,12 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle Antigravity accounts: return Claude + Gemini models
 	if account.Platform == service.PlatformAntigravity {
+		// For OAuth accounts: return default Antigravity models directly
+		if account.IsOAuth() {
+			response.Success(c, antigravity.DefaultModels())
+			return
+		}
+
 		mapping := account.GetModelMapping()
 		if len(mapping) == 0 {
 			// 直接复用 antigravity.DefaultModels()，与 /v1/models 端点保持同步
@@ -1800,22 +1806,14 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 		var models []antigravity.ClaudeModel
 		for requestedModel := range mapping {
-			var found bool
 			for _, dm := range antigravity.DefaultModels() {
 				if dm.ID == requestedModel {
 					models = append(models, dm)
-					found = true
 					break
 				}
 			}
-			if !found {
-				models = append(models, antigravity.ClaudeModel{
-					ID:          requestedModel,
-					Type:        "model",
-					DisplayName: requestedModel,
-					CreatedAt:   "",
-				})
-			}
+			// We intentionally do not append models that are not found in DefaultModels
+			// to avoid displaying garbage data from the DB in the UI.
 		}
 		response.Success(c, models)
 		return

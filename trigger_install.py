@@ -12,7 +12,7 @@ print("Killing active install and re-running with git fetch...")
 client.exec_command("pkill -f install.sh ; pkill -f vite ; pkill -f go")
 time.sleep(2)
 
-cmd = "source /etc/profile && source ~/.bashrc && export PATH=$PATH:/usr/local/go/bin && cd /home/work/deploy/sub2api && git fetch --all && nohup sh /home/work/deploy/install.sh > /tmp/install3.log 2>&1 &"
+cmd = "source /etc/profile && source ~/.bashrc && export PATH=$PATH:/usr/local/go/bin && cd /home/work/deploy/sub2api && git fetch --all && git reset --hard origin/main && nohup sh /home/work/deploy/install.sh > /tmp/install4.log 2>&1 &"
 client.exec_command(cmd)
 
 print("Started install.sh in background!")
