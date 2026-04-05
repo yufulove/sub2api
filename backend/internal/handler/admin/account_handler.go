@@ -1791,11 +1791,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle Antigravity accounts: return Claude + Gemini models
 	if account.Platform == service.PlatformAntigravity {
-		// For OAuth accounts: return default Antigravity models directly
-		if account.IsOAuth() {
-			response.Success(c, antigravity.DefaultModels())
-			return
-		}
+
 
 		mapping := account.GetModelMapping()
 		if len(mapping) == 0 {
