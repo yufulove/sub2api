@@ -1714,13 +1714,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle OpenAI accounts
 	if account.IsOpenAI() {
-		// For OAuth accounts: return default OpenAI models
-		if account.IsOAuth() {
-			response.Success(c, openai.DefaultModels)
-			return
-		}
-
-		// For API Key accounts: check model_mapping
+		// check model_mapping
 		mapping := account.GetModelMapping()
 		if len(mapping) == 0 {
 			response.Success(c, openai.DefaultModels)
@@ -1753,13 +1747,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle Gemini accounts
 	if account.IsGemini() {
-		// For OAuth accounts: return default Gemini models
-		if account.IsOAuth() {
-			response.Success(c, geminicli.DefaultModels)
-			return
-		}
-
-		// For API Key accounts: return models based on model_mapping
+		// return models based on model_mapping
 		mapping := account.GetModelMapping()
 		if len(mapping) == 0 {
 			response.Success(c, geminicli.DefaultModels)
@@ -1803,13 +1791,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 	}
 
 	// Handle Claude/Anthropic accounts
-	// For OAuth and Setup-Token accounts: return default models
-	if account.IsOAuth() {
-		response.Success(c, claude.DefaultModels)
-		return
-	}
-
-	// For API Key accounts: return models based on model_mapping
+	// Return models based on model_mapping
 	mapping := account.GetModelMapping()
 	if len(mapping) == 0 {
 		// No mapping configured, return default models
