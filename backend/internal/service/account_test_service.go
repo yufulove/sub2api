@@ -88,6 +88,34 @@ func NewAccountTestService(
 	}
 }
 
+func formatTestAPIError(statusCode int, body []byte) string {
+	if len(body) == 0 {
+		return fmt.Sprintf("API 返回 %d", statusCode)
+	}
+
+	var genericErrResp struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(body, &genericErrResp); err == nil && genericErrResp.Error.Message != "" {
+		return fmt.Sprintf("API 返回 %d: %s", statusCode, genericErrResp.Error.Message)
+	}
+
+	var flatErrResp struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(body, &flatErrResp); err == nil && flatErrResp.Message != "" {
+		return fmt.Sprintf("API 返回 %d: %s", statusCode, flatErrResp.Message)
+	}
+
+	limit := 256
+	if len(body) < limit {
+		limit = len(body)
+	}
+	return fmt.Sprintf("API 返回 %d: %s", statusCode, string(body[:limit]))
+}
+
 func (s *AccountTestService) validateUpstreamBaseURL(raw string) (string, error) {
 	if s.cfg == nil {
 		return "", errors.New("config is not available")
@@ -298,7 +326,7 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+		return s.sendErrorAndEnd(c, formatTestAPIError(resp.StatusCode, body))
 	}
 
 	// Process SSE stream
@@ -427,7 +455,7 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 				account.RateLimitResetAt = resetAt
 			}
 		}
-		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+		return s.sendErrorAndEnd(c, formatTestAPIError(resp.StatusCode, body))
 	}
 
 	// Process SSE stream
@@ -498,7 +526,12 @@ func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return s.sendErrorAndEnd(c, fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body)))
+		if resp.StatusCode == http.StatusTooManyRequests && s.accountRepo != nil {
+			resetAt := time.Now().Add(6 * time.Hour)
+			_ = s.accountRepo.SetRateLimited(ctx, account.ID, resetAt)
+			account.RateLimitResetAt = &resetAt
+		}
+		return s.sendErrorAndEnd(c, formatTestAPIError(resp.StatusCode, body))
 	}
 
 	// Process SSE stream

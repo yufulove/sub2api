@@ -1,0 +1,524 @@
+--- T02:04:30.795+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "792d5ea4-16bc-4021-8a83-a3d2815ba4d5",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T02:05:20.374+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "2d916564-f4e5-49fd-9f71-ff50323074f2",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T02:06:26.049+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "b45cdda7-af13-4035-9c36-3a59b09ef519",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T02:44:38.882+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "1eb85c2e-bf59-4aa6-8b5d-0bb7569dd082",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T02:45:19.667+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "d0d667bb-1d42-4a42-93ff-e23282c312f2",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T02:46:22.859+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "0865bbb5-bf75-446c-bcdc-268d7c997da7",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T02:47:28.836+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "57d1434e-ec34-469a-82a2-ebc4dbc31b8a",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T02:48:33.293+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "1b347b1f-8115-438c-b379-3d6cca98c85d",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T02:49:36.453+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "36e0712a-f1e1-41f0-b74d-a4a84df56780",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T02:50:59.879+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "bf8e1948-ef6e-4bc6-aaf1-dd13c0db58f9",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T10:14:28.750+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "7bc63797-b702-4f1f-9e61-0ecdf1d57c73",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T11:12:20.279+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "5b1ad3b8-6fe6-481d-82e1-a1fed3783251",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T11:12:51.095+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "02d3df5c-a911-4fc5-907b-63e45333930a",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T11:12:53.979+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "d169f6c1-4fde-4241-8d3a-fdd061e337e3",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T11:12:59.120+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "fe4cb0b7-d798-41b4-bec4-976bc1c6e31f",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T11:13:49.561+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "219efef4-89f4-4181-a7dd-714cf13127ab",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T11:14:53.911+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "54bd0753-f089-4826-8d18-be42e073055f",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true,
+  "rawErrorPreview": "Request was aborted",
+  "rawErrorHash": "sha256:49b7929c880d"
+}
+
+--- T11:30:41.182+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "1660aff7-1d49-4a05-bf34-28936d001003",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T11:57:08.203+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "bfed31f3-0b72-4f22-b353-32c2e758e02d",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T12:19:57.656+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "d2bb8a30-3787-4958-bfe6-0b330ef8fca0",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T12:43:17.879+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "402b5d14-61b0-4ecb-bc43-2927f98f9879",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T12:44:39.331+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "32738a9b-688f-408c-85bc-ca05c78f1c05",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T12:49:36.299+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "b3767cca-2dae-438f-99a7-1ec18b08a837",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+
+--- T13:00:24.496+08:00 ---
+{
+  "event": "embedded_run_failover_decision",
+  "tags": [
+    "error_handling",
+    "failover",
+    "assistant",
+    "surface_error"
+  ],
+  "runId": "8c1ffc93-df98-4eb9-963a-ae1e7e807f62",
+  "stage": "assistant",
+  "decision": "surface_error",
+  "failoverReason": "timeout",
+  "profileFailureReason": "timeout",
+  "provider": "sub2api",
+  "model": "gpt-5.4",
+  "fallbackConfigured": false,
+  "timedOut": true,
+  "aborted": true
+}
+

@@ -1,0 +1,81 @@
+T11:46:44.301+08:00 [browser/server] Browser control listening on http://127.0.0.1:18791/ (auth=token)
+T11:46:44.307+08:00 [] 
+T11:46:46.437+08:00 [gateway/ws] webchat connected conn=a11f95d1-3648-4008-b2ac-aa8ec6041f26 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T11:46:49.655+08:00 [gateway/ws] ⇄ res ✓ chat.history 2766ms conn=a11f95d1…1f26 id=e359b586…4643
+T11:46:49.659+08:00 [gateway/ws] ⇄ res ✓ models.list 2733ms conn=a11f95d1…1f26 id=93794d08…8a3e
+T11:46:49.661+08:00 [gateway/ws] ⇄ res ✓ node.list 2774ms conn=a11f95d1…1f26 id=b856e9f3…8336
+T11:46:49.663+08:00 [gateway/ws] ⇄ res ✓ device.pair.list 2776ms conn=a11f95d1…1f26 id=67d65da3…6e6c
+T11:55:47.473+08:00 [gateway/ws] webchat disconnected code=1001 reason=n/a conn=a11f95d1-3648-4008-b2ac-aa8ec6041f26
+T11:55:51.538+08:00 [gateway/ws]  tags=[]
+T11:55:52.877+08:00 [gateway/ws] webchat connected conn=4c06f548-f2c5-42f2-88ed-5e5cd0dd769c remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T11:57:08.203+08:00 [agent/embedded] embedded_run_failover_decision tags=['error_handling', 'failover', 'assistant', 'surface_error']
+T12:13:29.898+08:00 [gateway] signal SIGTERM received
+T12:13:29.900+08:00 [gateway] received SIGTERM; shutting down
+T12:13:29.918+08:00 [gmail-watcher] gmail watcher stopped
+T12:13:30.353+08:00 [gateway/ws] webchat disconnected code=1012 reason=service restart conn=4c06f548-f2c5-42f2-88ed-5e5cd0dd769c
+T12:13:39.553+08:00 [] 
+T12:13:40.147+08:00 [gateway] gateway: canonicalized orphaned session keys:
+- Canonicalized 1 orphaned session key(s) in /root/.openclaw/agents/main/sessions/sessions.json
+T12:13:40.337+08:00 [gateway/canvas] canvas host mounted at http://127.0.0.1:18789/__openclaw__/canvas/ (root /root/.openclaw/canvas)
+T12:13:40.420+08:00 [gateway/heartbeat]  tags=[]
+T12:13:40.424+08:00 [gateway/health-monitor] started (interval: 300s, startup-grace: 60s, channel-connect-grace: 120s)
+T12:13:40.451+08:00 [gateway] agent model: sub2api/gpt-5.4
+T12:13:40.454+08:00 [gateway] listening on ws://127.0.0.1:18789, ws://[::1]:18789 (PID 1473616)
+T12:13:40.456+08:00 [gateway] log file: /tmp/openclaw/openclaw-2026-04-05.log
+T12:13:40.458+08:00 [gateway] security warning: dangerous config flags enabled: gateway.controlUi.allowInsecureAuth=true. Run `openclaw security audit`.
+T12:13:40.596+08:00 []  tags=[]
+T12:13:40.597+08:00 []  tags=[]
+T12:13:40.634+08:00 [gateway/hooks] loaded 4 internal hook handlers
+T12:13:45.493+08:00 [bonjour] watchdog detected non-announced service; attempting re-advertise (gateway fqdn=VM-0-11-opencloudos (OpenClaw)._openclaw-gw._tcp.local. host=openclaw.local. port=18789 state=probing)
+T12:13:45.834+08:00 [browser/server] Browser control listening on http://127.0.0.1:18791/ (auth=token)
+T12:13:45.847+08:00 [] 
+T12:13:47.875+08:00 [gateway/ws]  tags=[]
+T12:13:47.883+08:00 [gateway/ws] webchat connected conn=f7496d60-4a32-4447-b3ee-d6c83f88f71f remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:13:48.338+08:00 [gateway/ws] webchat connected conn=bb2a38e2-e8b1-4de4-9850-923d8c71d171 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:13:51.681+08:00 [gateway/ws] ⇄ res ✓ chat.history 2876ms conn=bb2a38e2…d171 id=2801ca7e…f753
+T12:13:51.687+08:00 [gateway/ws] ⇄ res ✓ models.list 2879ms conn=bb2a38e2…d171 id=dc0c767b…7482
+T12:13:51.697+08:00 [gateway/ws] ⇄ res ✓ node.list 2896ms conn=bb2a38e2…d171 id=f0d915df…0998
+T12:13:51.699+08:00 [gateway/ws] ⇄ res ✓ device.pair.list 2898ms conn=bb2a38e2…d171 id=809ae49b…edcd
+T12:14:12.414+08:00 [] 
+T12:14:12.428+08:00 [] 
+T12:14:12.431+08:00 [] 
+T12:14:12.432+08:00 [] 
+T12:14:12.434+08:00 [] 
+T12:14:12.435+08:00 [] 
+T12:18:36.137+08:00 [gateway/ws] ⇄ res ✓ node.list 823ms conn=bb2a38e2…d171 id=03efb07a…a5f8
+T12:19:57.656+08:00 [agent/embedded] embedded_run_failover_decision tags=['error_handling', 'failover', 'assistant', 'surface_error']
+T12:22:46.210+08:00 [gateway/ws] ⇄ res ✓ node.list 165678ms conn=bb2a38e2…d171 id=f0131b8b…5346
+T12:33:35.465+08:00 [gateway/ws] webchat disconnected code=1006 reason=n/a conn=bb2a38e2-e8b1-4de4-9850-923d8c71d171
+T12:34:25.767+08:00 [gateway/ws] webchat connected conn=1c3144b9-0b27-4c2b-8739-929e104da6ff remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:41:32.187+08:00 [] 
+T12:41:33.286+08:00 [gateway/canvas] canvas host mounted at http://127.0.0.1:18789/__openclaw__/canvas/ (root /root/.openclaw/canvas)
+T12:41:33.433+08:00 [gateway/heartbeat]  tags=[]
+T12:41:33.436+08:00 [gateway/health-monitor] started (interval: 300s, startup-grace: 60s, channel-connect-grace: 120s)
+T12:41:33.457+08:00 [gateway] agent model: sub2api/gpt-5.4
+T12:41:33.459+08:00 [gateway] listening on ws://127.0.0.1:18789, ws://[::1]:18789 (PID 1483737)
+T12:41:33.461+08:00 [gateway] log file: /tmp/openclaw/openclaw-2026-04-05.log
+T12:41:33.463+08:00 [gateway] security warning: dangerous config flags enabled: gateway.controlUi.allowInsecureAuth=true. Run `openclaw security audit`.
+T12:41:33.597+08:00 []  tags=[]
+T12:41:33.598+08:00 []  tags=[]
+T12:41:33.632+08:00 [gateway/hooks] loaded 4 internal hook handlers
+T12:41:38.843+08:00 [bonjour] watchdog detected non-announced service; attempting re-advertise (gateway fqdn=VM-0-11-opencloudos (OpenClaw)._openclaw-gw._tcp.local. host=openclaw.local. port=18789 state=probing)
+T12:41:39.190+08:00 [browser/server] Browser control listening on http://127.0.0.1:18791/ (auth=token)
+T12:41:39.601+08:00 [] 
+T12:41:41.326+08:00 [gateway/ws] webchat connected conn=c23cd02f-63fb-46e5-83c4-3e668a22909f remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:41:44.673+08:00 [gateway/ws] ⇄ res ✓ chat.history 2638ms conn=c23cd02f…909f id=a5a7092a…0b5a
+T12:41:44.677+08:00 [gateway/ws] ⇄ res ✓ models.list 2624ms conn=c23cd02f…909f id=aa6eea85…420e
+T12:41:44.684+08:00 [gateway/ws] ⇄ res ✓ node.list 2650ms conn=c23cd02f…909f id=69465684…81ee
+T12:41:44.686+08:00 [gateway/ws] ⇄ res ✓ device.pair.list 2652ms conn=c23cd02f…909f id=e38db01e…a850
+T12:41:49.504+08:00 [gateway/ws] webchat connected conn=33f8ccd1-5b9d-431c-b084-eb69744b7d56 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:42:57.544+08:00 [gateway/ws] webchat disconnected code=1001 reason=n/a conn=c23cd02f-63fb-46e5-83c4-3e668a22909f
+T12:43:00.794+08:00 [gateway/ws] webchat disconnected code=1001 reason=n/a conn=33f8ccd1-5b9d-431c-b084-eb69744b7d56
+T12:43:02.374+08:00 [gateway/ws] webchat connected conn=35a3ee07-c899-444d-83e8-d8df18d5e9e3 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:43:03.586+08:00 [gateway/ws] webchat disconnected code=1001 reason=n/a conn=35a3ee07-c899-444d-83e8-d8df18d5e9e3
+T12:43:14.525+08:00 [gateway/ws] webchat connected conn=89318954-ce77-45c2-b3b5-dc990fc27c85 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:43:17.879+08:00 [agent/embedded] embedded_run_failover_decision tags=['error_handling', 'failover', 'assistant', 'surface_error']
+T12:44:39.331+08:00 [agent/embedded] embedded_run_failover_decision tags=['error_handling', 'failover', 'assistant', 'surface_error']
+T12:48:18.405+08:00 [gateway/ws] webchat disconnected code=1001 reason=n/a conn=89318954-ce77-45c2-b3b5-dc990fc27c85
+T12:48:24.411+08:00 [gateway/ws] webchat connected conn=f9909cd5-e636-40b6-8a84-7d6e7de52324 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
+T12:49:36.299+08:00 [agent/embedded] embedded_run_failover_decision tags=['error_handling', 'failover', 'assistant', 'surface_error']
+T12:56:18.425+08:00 [gateway/ws] webchat disconnected code=1001 reason=n/a conn=f9909cd5-e636-40b6-8a84-7d6e7de52324
+T12:56:23.715+08:00 [gateway/ws] webchat connected conn=af2d159c-1500-47b7-ad37-2b7aa2982fa9 remote=127.0.0.1 client=openclaw-control-ui webchat vcontrol-ui
