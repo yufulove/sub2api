@@ -1714,6 +1714,12 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle OpenAI accounts
 	if account.IsOpenAI() {
+		// For OAuth accounts: return default OpenAI models
+		if account.IsOAuth() {
+			response.Success(c, openai.DefaultModels)
+			return
+		}
+
 		// check model_mapping
 		mapping := account.GetModelMapping()
 		if len(mapping) == 0 {
@@ -1747,6 +1753,12 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle Gemini accounts
 	if account.IsGemini() {
+		// For OAuth accounts: return default Gemini models
+		if account.IsOAuth() {
+			response.Success(c, geminicli.DefaultModels)
+			return
+		}
+
 		// return models based on model_mapping
 		mapping := account.GetModelMapping()
 		if len(mapping) == 0 {
@@ -1816,7 +1828,14 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 	}
 
 	// Handle Claude/Anthropic accounts
-	// Return models based on model_mapping
+	if account.IsAnthropic() {
+		// For OAuth accounts: return default Claude models
+		if account.IsOAuth() {
+			response.Success(c, claude.DefaultModels)
+			return
+		}
+
+		// Return models based on model_mapping
 	mapping := account.GetModelMapping()
 	if len(mapping) == 0 {
 		// No mapping configured, return default models
@@ -1848,6 +1867,7 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 	}
 
 	response.Success(c, models)
+	}
 }
 
 // RefreshTier handles refreshing Google One tier for a single account
