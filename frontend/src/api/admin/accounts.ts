@@ -539,6 +539,24 @@ export async function getAntigravityDefaultModelMapping(): Promise<Record<string
 }
 
 /**
+ * Get default available models for a platform (no account ID needed)
+ * @param platform - Platform name (openai, anthropic, gemini, antigravity, sora)
+ * @returns List of available models with id and display_name
+ */
+export interface PlatformModelItem {
+  id: string
+  display_name: string
+}
+
+export async function getPlatformModels(platform: string): Promise<PlatformModelItem[]> {
+  const { data } = await apiClient.get<PlatformModelItem[]>(
+    '/admin/accounts/platform-models',
+    { params: { platform } }
+  )
+  return data
+}
+
+/**
  * Refresh OpenAI token using refresh token
  * @param refreshToken - The refresh token
  * @param proxyId - Optional proxy ID
@@ -653,6 +671,7 @@ export const accountsAPI = {
   exportData,
   importData,
   getAntigravityDefaultModelMapping,
+  getPlatformModels,
   batchClearError,
   batchRefresh
 }

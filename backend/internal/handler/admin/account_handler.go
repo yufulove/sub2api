@@ -2025,6 +2025,55 @@ func (h *AccountHandler) BatchRefreshTier(c *gin.Context) {
 	response.Success(c, results)
 }
 
+// PlatformModelItem is a simplified model representation for the platform-models endpoint.
+type PlatformModelItem struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"display_name"`
+}
+
+// GetPlatformModels returns the default available models for a given platform.
+// GET /api/v1/admin/accounts/platform-models?platform=openai
+func (h *AccountHandler) GetPlatformModels(c *gin.Context) {
+	platform := strings.ToLower(strings.TrimSpace(c.Query("platform")))
+	if platform == "" {
+		response.BadRequest(c, "platform query parameter is required")
+		return
+	}
+
+	var items []PlatformModelItem
+
+	switch platform {
+	case "openai":
+		for _, m := range openai.DefaultModels {
+			items = append(items, PlatformModelItem{ID: m.ID, DisplayName: m.DisplayName})
+		}
+	case "anthropic", "claude":
+		for _, m := range claude.DefaultModels {
+			items = append(items, PlatformModelItem{ID: m.ID, DisplayName: m.DisplayName})
+		}
+	case "gemini":
+		for _, m := range geminicli.DefaultModels {
+			items = append(items, PlatformModelItem{ID: m.ID, DisplayName: m.DisplayName})
+		}
+	case "antigravity":
+		for _, m := range antigravity.DefaultModels() {
+			items = append(items, PlatformModelItem{ID: m.ID, DisplayName: m.DisplayName})
+		}
+	case "sora":
+		for _, m := range service.DefaultSoraModels(nil) {
+			items = append(items, PlatformModelItem{ID: m.ID, DisplayName: m.DisplayName})
+		}
+	default:
+		response.BadRequest(c, "unsupported platform: "+platform)
+		return
+	}
+
+	if items == nil {
+		items = []PlatformModelItem{}
+	}
+	response.Success(c, items)
+}
+
 // GetAntigravityDefaultModelMapping 获取 Antigravity 平台的默认模型映射
 // GET /api/v1/admin/accounts/antigravity/default-model-mapping
 func (h *AccountHandler) GetAntigravityDefaultModelMapping(c *gin.Context) {

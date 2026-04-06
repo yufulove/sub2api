@@ -120,12 +120,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import ModelIcon from '@/components/common/ModelIcon.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { allModels, getModelsByPlatform } from '@/composables/useModelWhitelist'
+import { getPlatformModels } from '@/api/admin/accounts'
+import { getModelsByPlatform } from '@/composables/useModelWhitelist'
 
 const { t } = useI18n()
 
@@ -144,12 +145,30 @@ const showDropdown = ref(false)
 const searchQuery = ref('')
 const customModel = ref('')
 const isComposing = ref(false)
-const availableOptions = computed(() => {
-  if (props.platform === 'sora') {
-    return getModelsByPlatform('sora').map(m => ({ value: m, label: m }))
+const loadingModels = ref(false)
+const backendModels = ref<{ value: string; label: string }[]>([])
+
+// Fetch models from backend when platform changes
+const fetchModels = async (platform: string) => {
+  if (!platform) return
+  loadingModels.value = true
+  try {
+    const models = await getPlatformModels(platform)
+    backendModels.value = models.map(m => ({ value: m.id, label: m.display_name || m.id }))
+  } catch (e) {
+    console.warn('[ModelWhitelistSelector] Failed to fetch platform models, falling back to local list', e)
+    // Fallback to hardcoded list
+    backendModels.value = getModelsByPlatform(platform).map(m => ({ value: m, label: m }))
+  } finally {
+    loadingModels.value = false
   }
-  return allModels
-})
+}
+
+watch(() => props.platform, (newPlatform) => {
+  fetchModels(newPlatform)
+}, { immediate: true })
+
+const availableOptions = computed(() => backendModels.value)
 
 const filteredModels = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
@@ -192,7 +211,7 @@ const handleEnter = () => {
 }
 
 const fillRelated = () => {
-  const models = getModelsByPlatform(props.platform)
+  const models = backendModels.value.map(m => m.value)
   const newModels = [...props.modelValue]
   for (const model of models) {
     if (!newModels.includes(model)) newModels.push(model)
