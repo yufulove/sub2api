@@ -390,6 +390,7 @@
           >
             {{ t('home.docs') }}
           </a>
+          <!-- 
           <a
             :href="githubUrl"
             target="_blank"
@@ -398,6 +399,7 @@
           >
             GitHub
           </a>
+          -->
         </div>
       </div>
     </footer>
