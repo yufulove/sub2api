@@ -30,7 +30,7 @@ FRONTEND_DIST_PATH="internal/web/dist"
 START_SCRIPT="nohup_start.sh"
 
 # Git 相关配置
-GIT_BRANCH="main"                       # 要拉取的分支名称
+GIT_BRANCH="prod"                       # 要拉取的sub2adpi项目prod分支名称
 BACKUP_BRANCH_PREFIX="tag"             # 备份分支前缀
 # ==================================================
 
@@ -52,7 +52,7 @@ echo "开始构建 sub2api 项目"
 echo "源码目录: ${WORK_DIR}"
 echo "部署根目录: ${DEPLOY_ROOT_DIR}"
 echo "备份目录: ${BAK_DEPLOY_DIR}"
-echo "Git 分支: ${GIT_BRANCH}"
+echo "sub2api Git 分支: ${GIT_BRANCH}"
 echo "时间: $(date)"
 echo "========================================="
 
@@ -123,7 +123,7 @@ if [ -d "${DEPLOY_DIR}" ]; then
     
     cd ${DEPLOY_ROOT_DIR} 
     # 推送（如果远程仓库有README等文件，先拉取）
-    #git pull origin main --rebase
+    git pull
 
     # 添加所有文件
     git add .
@@ -156,7 +156,7 @@ fi
 echo -e "${GREEN}✅ 步骤 5: 复制编译后的执行文件到目标位置完成${NC}"
 echo "========================================="
 
-# 6. 提交git
+# 6. 提交到制品包的git项目
 cd ${DEPLOY_ROOT_DIR} || error_exit "无法进入 ${DEPLOY_ROOT_DIR} 目录" 6
 
 # 配置用户信息
@@ -165,7 +165,8 @@ git config --global user.email "yufenfei2026@126.com"
 git config --global credential.helper store
 
 # 推送（如果远程仓库有README等文件，先拉取）
-git pull origin main --rebase
+#git pull origin main --rebase
+git pull
 git add .
 git commit -m "打包提交,时间:${DATE_DIR}${TIME_DIR}"
 git push -u origin main

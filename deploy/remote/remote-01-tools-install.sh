@@ -19,6 +19,12 @@ source ~/.bashrc
 
 mkdir -p /home/work/deploy
 cd /home/work/deploy
-git clone -b main https://github.com/yufenfei2026/deploy-sub2api.git
-git clone -b main https://github.com/yufulove/sub2api.git
+
+#sub2api项目路径及下载项目代码
+git clone -b prod https://github.com/yufulove/sub2api.git
+
+# 制品包git项目路径及下载项目代码
+git clone -b prod https://github.com/yufenfei2026/deploy-sub2api.git
+
+
 
