@@ -1,8 +1,7 @@
 #!/bin/bash
 
-###remot_build_upload.sh
 
-### build-upload.sh
+### remote-02-build-upload.sh
 
 # 颜色定义
 RED='\033[0;31m'

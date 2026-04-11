@@ -1,6 +1,6 @@
 #!/bin/bash
 
-### remote_deploy.sh
+### remote-03-exe-deploy.sh
 
 # 颜色定义
 RED='\033[0;31m'
