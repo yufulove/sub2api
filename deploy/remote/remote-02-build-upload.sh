@@ -146,6 +146,13 @@ echo "前端文件复制完成"
 
 # 重命名前端目录
 cd ${DEPLOY_DIR} || error_exit "无法进入 ${DEPLOY_DIR} 目录" 5
+
+cd backend
+zip -r sub2api.zip sub2api 
+rm -rf sub2api
+
+cd ${DEPLOY_DIR}
+
 if [ -d "dist" ]; then
     rm -rf frontend 2>/dev/null  # 删除旧的 frontend 软链接或目录
     mv dist frontend || error_exit "重命名前端目录失败" 5
