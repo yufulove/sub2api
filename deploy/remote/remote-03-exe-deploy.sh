@@ -61,6 +61,9 @@ echo -e "${GREEN}拉取代码已完成${NC}"
 echo -e "${GREEN}✅ 步骤 1: 进入目录并拉取最新代码完成${NC}"
 echo "========================================="
 
+cd ${PKG_DIR}/backend
+unzip sub2api.zip
+
 
 # 2. kill当前进程
 echo ""
