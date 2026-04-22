@@ -4,6 +4,8 @@
 
 // OpenAI
 const openaiModels = [
+  'gpt-image-1',
+  'gpt-image-1.5',
   'gpt-image-2',
   'gpt-5.4',
   'gpt-5.3-codex',
