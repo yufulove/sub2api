@@ -19,6 +19,7 @@ This directory contains files for deploying Sub2API on Linux servers.
 | `.env.example` | Docker environment variables template |
 | `DOCKER.md` | Docker Hub documentation |
 | `install.sh` | One-click binary installation script |
+| `install-source.sh` | Compatibility entrypoint for source checkout deployments |
 | `source-deploy.sh` | Build from the current git commit in a temporary directory and install the binary without polluting the checkout |
 | `install-datamanagementd.sh` | datamanagementd 一键安装脚本 |
 | `sub2api.service` | Systemd service unit file |
