@@ -214,6 +214,7 @@ import Select from '@/components/common/Select.vue'
 import TextArea from '@/components/common/TextArea.vue'
 import { Icon } from '@/components/icons'
 import { useClipboard } from '@/composables/useClipboard'
+import { normalizePlatformModelOptions, pickDefaultTestModel } from '@/composables/modelCatalog'
 import { adminAPI } from '@/api/admin'
 import type { Account, ClaudeModel } from '@/types'
 
@@ -296,19 +297,12 @@ const loadAvailableModels = async () => {
   selectedModelId.value = '' // Reset selection before loading
   try {
     const models = await adminAPI.accounts.getAvailableModels(props.account.id)
-    availableModels.value = props.account.platform === 'gemini' || props.account.platform === 'antigravity'
-      ? sortTestModels(models)
-      : models
-    // Default selection by platform
-    if (availableModels.value.length > 0) {
-      if (props.account.platform === 'gemini') {
-        selectedModelId.value = availableModels.value[0].id
-      } else {
-        // Try to select Sonnet as default, otherwise use first model
-        const sonnetModel = availableModels.value.find((m) => m.id.includes('sonnet'))
-        selectedModelId.value = sonnetModel?.id || availableModels.value[0].id
-      }
-    }
+    const normalizedModels = normalizePlatformModelOptions(props.account.platform, models) as ClaudeModel[]
+    availableModels.value =
+      props.account.platform === 'gemini' || props.account.platform === 'antigravity'
+        ? sortTestModels(normalizedModels)
+        : normalizedModels
+    selectedModelId.value = pickDefaultTestModel(props.account.platform, availableModels.value)
   } catch (error) {
     console.error('Failed to load available models:', error)
     // Fallback to empty list
