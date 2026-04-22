@@ -19,6 +19,7 @@ This directory contains files for deploying Sub2API on Linux servers.
 | `.env.example` | Docker environment variables template |
 | `DOCKER.md` | Docker Hub documentation |
 | `install.sh` | One-click binary installation script |
+| `source-deploy.sh` | Build from the current git commit in a temporary directory and install the binary without polluting the checkout |
 | `install-datamanagementd.sh` | datamanagementd 一键安装脚本 |
 | `sub2api.service` | Systemd service unit file |
 | `sub2api-datamanagementd.service` | datamanagementd systemd service unit file |
@@ -368,6 +369,16 @@ curl -sSL https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/deploy/install
    sudo systemctl start sub2api
    ```
 5. Open the Setup Wizard in your browser to complete configuration
+
+### Source Checkout Deployment
+
+If your server deploys from a git checkout instead of a release archive, use `source-deploy.sh` from the repository root:
+
+```bash
+sudo ./deploy/source-deploy.sh --repo /path/to/sub2api
+```
+
+The script archives the current git commit into a temporary build directory, builds the frontend and embedded backend there, then installs only `/opt/sub2api/sub2api`. This keeps the server checkout clean and avoids leaving a root-level `sub2api` binary, `node_modules`, or generated frontend files in the deployed source tree.
 
 ### Commands
 

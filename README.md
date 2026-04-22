@@ -381,6 +381,14 @@ Build and run from source code for development or customization.
 - PostgreSQL 15+
 - Redis 7+
 
+For production servers that deploy from a git checkout, prefer the source deployment script:
+
+```bash
+sudo ./deploy/source-deploy.sh --repo /path/to/sub2api
+```
+
+It builds from the current git commit in a temporary directory and installs only the final binary to `/opt/sub2api/sub2api`, so the checkout stays clean.
+
 #### Build Steps
 
 ```bash
