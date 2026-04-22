@@ -8,6 +8,7 @@ export interface PlatformModelOption {
 }
 
 const curatedModelDisplayNames: Record<string, string> = {
+  'gpt-image-2': 'GPT Image 2',
   'gpt-5.4': 'GPT-5.4',
   'gpt-5.3-codex': 'GPT-5.3 Codex',
   'gpt-5.3-codex-spark': 'GPT-5.3 Codex Spark',

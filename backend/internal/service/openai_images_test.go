@@ -87,6 +87,24 @@ func TestOpenAIGatewayServiceParseOpenAIImagesRequest_PromptOnlyDefaultsRemainBa
 	require.Equal(t, OpenAIImagesCapabilityBasic, parsed.RequiredCapability)
 }
 
+func TestOpenAIGatewayServiceParseOpenAIImagesRequest_ExplicitGPTImageModelRemainBasic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"gpt-image-2","prompt":"draw a cat"}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = req
+
+	svc := &OpenAIGatewayService{}
+	parsed, err := svc.ParseOpenAIImagesRequest(c, body)
+	require.NoError(t, err)
+	require.NotNil(t, parsed)
+	require.Equal(t, "gpt-image-2", parsed.Model)
+	require.Equal(t, OpenAIImagesCapabilityBasic, parsed.RequiredCapability)
+}
+
 func TestOpenAIGatewayServiceParseOpenAIImagesRequest_ExplicitSizeRequiresNativeCapability(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	body := []byte(`{"prompt":"draw a cat","size":"1024x1024"}`)

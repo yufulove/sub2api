@@ -311,7 +311,7 @@ func classifyOpenAIImagesCapability(req *OpenAIImagesRequest) OpenAIImagesCapabi
 	if req == nil {
 		return OpenAIImagesCapabilityNative
 	}
-	if req.ExplicitModel || req.ExplicitSize {
+	if req.ExplicitSize {
 		return OpenAIImagesCapabilityNative
 	}
 	model := strings.ToLower(strings.TrimSpace(req.Model))
