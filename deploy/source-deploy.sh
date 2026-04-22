@@ -8,7 +8,13 @@ set -euo pipefail
 REPO_DIR=""
 INSTALL_DIR="${INSTALL_DIR:-/opt/sub2api}"
 SERVICE_NAME="${SERVICE_NAME:-sub2api}"
+BACKUP_BASE="${BACKUP_BASE:-${INSTALL_DIR}/upgrade-backups}"
+VERIFY_URL="${VERIFY_URL:-http://127.0.0.1:8080/health}"
+VERIFY_ATTEMPTS="${VERIFY_ATTEMPTS:-20}"
+VERIFY_INTERVAL_SECONDS="${VERIFY_INTERVAL_SECONDS:-2}"
 RESTART_SERVICE=1
+
+export PATH="/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 
 usage() {
   cat <<'EOF'
@@ -26,6 +32,8 @@ Environment:
   INSTALL_DIR           Same as --install-dir.
   SERVICE_NAME          Same as --service.
   PNPM_BIN              pnpm executable to use. Defaults to corepack pnpm or pnpm.
+  BACKUP_BASE           Backup directory. Defaults to /opt/sub2api/upgrade-backups.
+  VERIFY_URL            Health check URL. Default: http://127.0.0.1:8080/health.
 
 Example:
   sudo ./deploy/source-deploy.sh --repo /opt/sub2api-src
@@ -100,7 +108,13 @@ run_pnpm() {
 }
 
 COMMIT="$(git -C "$REPO_DIR" rev-parse --short=12 HEAD)"
+FULL_COMMIT="$(git -C "$REPO_DIR" rev-parse HEAD)"
+BRANCH="$(git -C "$REPO_DIR" branch --show-current 2>/dev/null || true)"
+if [[ -z "$BRANCH" ]]; then
+  BRANCH="detached"
+fi
 DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+BACKUP_DIR="${BACKUP_BASE}/source_deploy_$(date +%Y%m%d_%H%M%S)"
 
 echo "[1/5] Creating temporary build snapshot from $COMMIT..."
 git -C "$REPO_DIR" archive --format=tar HEAD | tar -xf - -C "$BUILD_DIR"
@@ -127,18 +141,42 @@ echo "[3/5] Building embedded backend binary..."
 
 echo "[4/5] Installing binary to $INSTALL_DIR/sub2api..."
 mkdir -p "$INSTALL_DIR"
+if [[ -f "$INSTALL_DIR/sub2api" ]]; then
+  mkdir -p "$BACKUP_DIR"
+  cp -a "$INSTALL_DIR/sub2api" "$BACKUP_DIR/sub2api"
+  echo "Backed up previous binary to $BACKUP_DIR/sub2api"
+fi
 INSTALL_TMP="$INSTALL_DIR/.sub2api.new.$$"
 install -m 0755 "$BUILD_DIR/sub2api" "$INSTALL_TMP"
 if id sub2api >/dev/null 2>&1; then
   chown sub2api:sub2api "$INSTALL_TMP"
 fi
 mv -f "$INSTALL_TMP" "$INSTALL_DIR/sub2api"
+printf '%s\n' "$BRANCH" > "$INSTALL_DIR/DEPLOYED_SOURCE_BRANCH"
+printf '%s\n' "$FULL_COMMIT" > "$INSTALL_DIR/DEPLOYED_SOURCE_REF"
 
 if [[ "$RESTART_SERVICE" -eq 1 ]]; then
   if command -v systemctl >/dev/null 2>&1; then
     echo "[5/5] Restarting $SERVICE_NAME..."
     systemctl restart "$SERVICE_NAME"
-    systemctl --no-pager --full status "$SERVICE_NAME" || true
+    echo "Verifying health at $VERIFY_URL..."
+    HEALTH_OK=0
+    for attempt in $(seq 1 "$VERIFY_ATTEMPTS"); do
+      if curl -fsS "$VERIFY_URL" >/dev/null; then
+        HEALTH_OK=1
+        echo "Health check passed on attempt $attempt/$VERIFY_ATTEMPTS."
+        break
+      fi
+
+      if [[ "$attempt" -lt "$VERIFY_ATTEMPTS" ]]; then
+        sleep "$VERIFY_INTERVAL_SECONDS"
+      fi
+    done
+
+    if [[ "$HEALTH_OK" -ne 1 ]]; then
+      systemctl --no-pager --full status "$SERVICE_NAME" || true
+      die "health check failed after $VERIFY_ATTEMPTS attempts: $VERIFY_URL"
+    fi
   else
     echo "[5/5] systemctl not found; restart $SERVICE_NAME manually."
   fi
