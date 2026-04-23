@@ -79,6 +79,15 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
+	t.Run("109生产库checksum兼容当前文件", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"109_auth_identity_compat_backfill.sql",
+			"748ddcdc60f93a1ac562ce8a66ee870f64ee594bf6dbedad55ed8baf3c75b28c",
+			"2b380305e73ff0c13aa8c811e45897f2b36ca4a438f7b3e8f98e19ecb6bae0b3",
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("110历史checksum可兼容", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"110_pending_auth_and_provider_default_grants.sql",
@@ -88,11 +97,29 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
+	t.Run("110生产库checksum兼容当前文件", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"110_pending_auth_and_provider_default_grants.sql",
+			"301e90405b3424967b7d1931568b7a244902148fa82802f362c115ae4e2ae2ef",
+			"57a196a9810fb478fa001dfff110f5c76a7d87fb04f15e12e513fcb75402d7a6",
+		)
+		require.True(t, ok)
+	})
+
 	t.Run("112历史checksum可兼容", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
 			"112_add_payment_order_provider_key_snapshot.sql",
 			"ffd3e8a2c9295fa9cbefefd629a78268877e5b51bc970a82d9b3f46ec4ebd15e",
 			"b75f8f56d39455682787696a3d92ad25b055444ca328fb7fca9a460a15d68d99",
+		)
+		require.True(t, ok)
+	})
+
+	t.Run("112生产库checksum兼容当前文件", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"112_add_payment_order_provider_key_snapshot.sql",
+			"d4476c67ceea871aa2d92ee2a603795a742d0379a58cf53938bb9aa559ff9caa",
+			"ab871fc02da1eabe0de6ca74a119ee3cea9c727caed30af2ae07a0cd1176d1b8",
 		)
 		require.True(t, ok)
 	})
@@ -136,6 +163,15 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 			)
 			require.True(t, ok)
 		}
+	})
+
+	t.Run("118生产库checksum兼容当前文件", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"118_wechat_dual_mode_and_auth_source_defaults.sql",
+			"6395ad255f2be2219ad85813b72db6fa7783c81d747e42e098847ef3594f1674",
+			"ed272e0840730b6b8e7838513c4cc8817e8b5e488e27c88b5421adbece5e89c9",
+		)
+		require.True(t, ok)
 	})
 
 	t.Run("120多个历史checksum都可兼容新的notx修复版本", func(t *testing.T) {
