@@ -5,7 +5,7 @@
     width="wide"
     @close="emit('close')"
   >
-    <div class="space-y-4">
+    <div class="space-y-4 overflow-x-hidden">
       <!-- No Group Assigned Warning -->
       <div v-if="!platform" class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
         <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -89,45 +89,41 @@
         </div>
 
         <!-- Client Tabs -->
-        <div v-if="clientTabs.length" class="border-b border-gray-200 dark:border-dark-700">
-          <nav class="-mb-px flex space-x-6" aria-label="Client">
+        <div v-if="clientTabs.length" class="rounded-xl border border-gray-200 bg-gray-50/70 p-2 dark:border-dark-700 dark:bg-dark-900/30">
+          <nav class="flex flex-wrap gap-2" aria-label="Client">
             <button
               v-for="tab in clientTabs"
               :key="tab.id"
               @click="activeClientTab = tab.id"
               :class="[
-                'whitespace-nowrap py-2.5 px-1 border-b-2 font-medium text-sm transition-colors',
+                'inline-flex max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
                 activeClientTab === tab.id
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'border-primary-500 bg-white text-primary-700 shadow-sm dark:bg-dark-800 dark:text-primary-300'
+                  : 'border-transparent text-gray-500 hover:border-gray-200 hover:bg-white hover:text-gray-700 dark:text-gray-400 dark:hover:border-dark-600 dark:hover:bg-dark-800 dark:hover:text-gray-300'
               ]"
             >
-              <span class="flex items-center gap-2">
-                <component :is="tab.icon" class="w-4 h-4" />
-                {{ tab.label }}
-              </span>
+              <component :is="tab.icon" class="h-4 w-4 flex-shrink-0" />
+              <span class="truncate">{{ tab.label }}</span>
             </button>
           </nav>
         </div>
 
         <!-- OS/Shell Tabs -->
         <div v-if="showShellTabs" class="border-b border-gray-200 dark:border-dark-700">
-          <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+          <nav class="flex flex-wrap gap-2" aria-label="Tabs">
             <button
               v-for="tab in currentTabs"
               :key="tab.id"
               @click="activeTab = tab.id"
               :class="[
-                'whitespace-nowrap py-2.5 px-1 border-b-2 font-medium text-sm transition-colors',
+                'inline-flex max-w-full items-center gap-2 border-b-2 px-2 py-2.5 text-sm font-medium transition-colors',
                 activeTab === tab.id
                   ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               ]"
             >
-              <span class="flex items-center gap-2">
-                <component :is="tab.icon" class="w-4 h-4" />
-                {{ tab.label }}
-              </span>
+              <component :is="tab.icon" class="h-4 w-4 flex-shrink-0" />
+              <span class="truncate">{{ tab.label }}</span>
             </button>
           </nav>
         </div>
@@ -137,20 +133,20 @@
           <div
             v-for="(file, index) in currentFiles"
             :key="index"
-            class="relative"
+            class="relative min-w-0"
           >
             <!-- File Hint (if exists) -->
             <p v-if="file.hint" class="text-xs text-amber-600 dark:text-amber-400 mb-1.5 flex items-center gap-1">
               <Icon name="exclamationCircle" size="sm" class="flex-shrink-0" />
               {{ file.hint }}
             </p>
-            <div class="bg-gray-900 dark:bg-dark-900 rounded-xl overflow-hidden">
+            <div class="w-full min-w-0 overflow-hidden rounded-xl bg-gray-900 dark:bg-dark-900">
               <!-- Code Header -->
-              <div class="flex items-center justify-between px-4 py-2 bg-gray-800 dark:bg-dark-800 border-b border-gray-700 dark:border-dark-700">
-                <span class="text-xs text-gray-400 font-mono">{{ file.path }}</span>
+              <div class="flex min-w-0 items-center justify-between gap-3 border-b border-gray-700 bg-gray-800 px-4 py-2 dark:border-dark-700 dark:bg-dark-800">
+                <span class="min-w-0 truncate text-xs font-mono text-gray-400">{{ file.path }}</span>
                 <button
                   @click="copyContent(file.content, index)"
-                  class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors"
+                  class="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors"
                   :class="copiedIndex === index
                     ? 'bg-green-500/20 text-green-400'
                     : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'"
@@ -165,7 +161,7 @@
                 </button>
               </div>
               <!-- Code Content -->
-              <pre class="p-4 text-sm font-mono text-gray-100 overflow-x-auto"><code v-if="file.highlighted" v-html="file.highlighted"></code><code v-else v-text="file.content"></code></pre>
+              <pre class="max-w-full overflow-x-auto p-4 text-sm font-mono text-gray-100"><code v-if="file.highlighted" v-html="file.highlighted"></code><code v-else v-text="file.content"></code></pre>
             </div>
           </div>
         </div>
