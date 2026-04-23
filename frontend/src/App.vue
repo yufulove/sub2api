@@ -35,7 +35,7 @@ function updateFavicon(logoUrl: string) {
 watch(
   () => appStore.siteLogo,
   (newLogo) => {
-    updateFavicon(newLogo || '/brand-mark.svg')
+    updateFavicon(newLogo || '/logo.png')
   },
   { immediate: true }
 )

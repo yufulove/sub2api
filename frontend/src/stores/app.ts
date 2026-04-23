@@ -16,11 +16,20 @@ import { getPublicSettings as fetchPublicSettingsAPI } from '@/api/auth'
 
 const DEFAULT_SITE_NAME = 'FionaAI'
 const LEGACY_SITE_NAMES = new Set(['sub2api', 'api中转', 'api中轉'])
+const LEGACY_SITE_LOGOS = new Set(['/brand-mark.svg', 'brand-mark.svg'])
 
 function normalizeSiteName(value?: string): string {
   const trimmed = typeof value === 'string' ? value.trim() : ''
   if (!trimmed || LEGACY_SITE_NAMES.has(trimmed.toLowerCase())) {
     return DEFAULT_SITE_NAME
+  }
+  return trimmed
+}
+
+function normalizeSiteLogo(value?: string): string {
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  if (!trimmed || LEGACY_SITE_LOGOS.has(trimmed.toLowerCase())) {
+    return ''
   }
   return trimmed
 }
@@ -300,13 +309,14 @@ export const useAppStore = defineStore('app', () => {
    */
   function applySettings(config: PublicSettings): void {
     const normalizedSiteName = normalizeSiteName(config.site_name)
-    const normalizedConfig = { ...config, site_name: normalizedSiteName }
+    const normalizedSiteLogo = normalizeSiteLogo(config.site_logo)
+    const normalizedConfig = { ...config, site_name: normalizedSiteName, site_logo: normalizedSiteLogo }
     if (typeof window !== 'undefined') {
       window.__APP_CONFIG__ = { ...normalizedConfig }
     }
     cachedPublicSettings.value = normalizedConfig
     siteName.value = normalizedSiteName
-    siteLogo.value = config.site_logo || ''
+    siteLogo.value = normalizedSiteLogo
     siteVersion.value = config.version || ''
     contactInfo.value = config.contact_info || ''
     apiBaseUrl.value = config.api_base_url || ''
