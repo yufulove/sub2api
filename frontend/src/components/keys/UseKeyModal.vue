@@ -364,7 +364,7 @@ const maskApiKey = (value: string) => {
 const defaultClientTab = computed(() => {
   switch (props.platform) {
     case 'openai':
-      return 'cherry-studio'
+      return 'opencode'
     case 'gemini':
       return 'gemini'
     case 'antigravity':
@@ -490,7 +490,7 @@ const clientTabs = computed((): TabConfig[] => {
 const primaryClientTabIds = computed(() => {
   switch (props.platform) {
     case 'openai':
-      return ['cherry-studio', 'chatbox', 'openai-sdk']
+      return ['opencode', 'claude', 'codex', 'openai-sdk']
     case 'gemini':
       return ['gemini']
     case 'antigravity':
