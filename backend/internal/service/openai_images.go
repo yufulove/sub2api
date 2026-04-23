@@ -883,9 +883,11 @@ func resolveOpenAIProxyURL(account *Account) string {
 }
 
 func newOpenAIBackendAPIClient(proxyURL string) (*req.Client, error) {
+	// ChatGPT backend has started returning intermittent 403s for the req/v3
+	// browser impersonation transport on some server IPs. A standard client
+	// with explicit browser headers is currently accepted more reliably.
 	client := req.C().
-		SetTimeout(180 * time.Second).
-		ImpersonateChrome()
+		SetTimeout(180 * time.Second)
 	trimmed, _, err := proxyurl.Parse(proxyURL)
 	if err != nil {
 		return nil, err
