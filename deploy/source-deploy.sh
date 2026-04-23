@@ -7,6 +7,7 @@ set -euo pipefail
 
 REPO_DIR=""
 INSTALL_DIR="${INSTALL_DIR:-/opt/sub2api}"
+FRONTEND_DIR="${FRONTEND_DIR:-${INSTALL_DIR}/frontend}"
 SERVICE_NAME="${SERVICE_NAME:-sub2api}"
 BACKUP_BASE="${BACKUP_BASE:-${INSTALL_DIR}/upgrade-backups}"
 VERIFY_URL="${VERIFY_URL:-http://127.0.0.1:8080/health}"
@@ -24,12 +25,14 @@ Usage:
 Options:
   --repo <path>         Source checkout path. Defaults to this script's repo.
   --install-dir <path>  Install directory. Default: /opt/sub2api
+  --frontend-dir <path> Frontend static directory for Nginx. Default: /opt/sub2api/frontend
   --service <name>      systemd service name. Default: sub2api
   --no-restart          Install the binary but do not restart the service.
   -h, --help            Show this help.
 
 Environment:
   INSTALL_DIR           Same as --install-dir.
+  FRONTEND_DIR          Same as --frontend-dir.
   SERVICE_NAME          Same as --service.
   PNPM_BIN              pnpm executable to use. Defaults to corepack pnpm or pnpm.
   BACKUP_BASE           Backup directory. Defaults to /opt/sub2api/upgrade-backups.
@@ -55,6 +58,11 @@ while [[ $# -gt 0 ]]; do
     --install-dir)
       INSTALL_DIR="${2:-}"
       [[ -n "$INSTALL_DIR" ]] || die "--install-dir requires a path"
+      shift 2
+      ;;
+    --frontend-dir)
+      FRONTEND_DIR="${2:-}"
+      [[ -n "$FRONTEND_DIR" ]] || die "--frontend-dir requires a path"
       shift 2
       ;;
     --service)
@@ -116,19 +124,21 @@ fi
 DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 BACKUP_DIR="${BACKUP_BASE}/source_deploy_$(date +%Y%m%d_%H%M%S)"
 
-echo "[1/5] Creating temporary build snapshot from $COMMIT..."
+echo "[1/6] Creating temporary build snapshot from $COMMIT..."
 git -C "$REPO_DIR" archive --format=tar HEAD | tar -xf - -C "$BUILD_DIR"
 
 VERSION="$(tr -d '\r\n' < "$BUILD_DIR/backend/cmd/server/VERSION")"
 
-echo "[2/5] Building frontend in temporary directory..."
+echo "[2/6] Building frontend in temporary directory..."
 (
   cd "$BUILD_DIR/frontend"
   run_pnpm install --frozen-lockfile
   run_pnpm run build
 )
+FRONTEND_BUILD_DIR="$BUILD_DIR/backend/internal/web/dist"
+[[ -f "$FRONTEND_BUILD_DIR/index.html" ]] || die "frontend build output missing index.html: $FRONTEND_BUILD_DIR"
 
-echo "[3/5] Building embedded backend binary..."
+echo "[3/6] Building embedded backend binary..."
 (
   cd "$BUILD_DIR/backend"
   CGO_ENABLED=0 go build \
@@ -139,7 +149,14 @@ echo "[3/5] Building embedded backend binary..."
     ./cmd/server
 )
 
-echo "[4/5] Installing binary to $INSTALL_DIR/sub2api..."
+echo "[4/6] Installing frontend static files to $FRONTEND_DIR..."
+mkdir -p "$FRONTEND_DIR"
+cp -a "$FRONTEND_BUILD_DIR"/. "$FRONTEND_DIR"/
+if id sub2api >/dev/null 2>&1; then
+  chown -R sub2api:sub2api "$FRONTEND_DIR"
+fi
+
+echo "[5/6] Installing binary to $INSTALL_DIR/sub2api..."
 mkdir -p "$INSTALL_DIR"
 if [[ -f "$INSTALL_DIR/sub2api" ]]; then
   mkdir -p "$BACKUP_DIR"
@@ -157,7 +174,7 @@ printf '%s\n' "$FULL_COMMIT" > "$INSTALL_DIR/DEPLOYED_SOURCE_REF"
 
 if [[ "$RESTART_SERVICE" -eq 1 ]]; then
   if command -v systemctl >/dev/null 2>&1; then
-    echo "[5/5] Restarting $SERVICE_NAME..."
+    echo "[6/6] Restarting $SERVICE_NAME..."
     systemctl restart "$SERVICE_NAME"
     echo "Verifying health at $VERIFY_URL..."
     HEALTH_OK=0
@@ -178,10 +195,10 @@ if [[ "$RESTART_SERVICE" -eq 1 ]]; then
       die "health check failed after $VERIFY_ATTEMPTS attempts: $VERIFY_URL"
     fi
   else
-    echo "[5/5] systemctl not found; restart $SERVICE_NAME manually."
+    echo "[6/6] systemctl not found; restart $SERVICE_NAME manually."
   fi
 else
-  echo "[5/5] Skipping service restart."
+  echo "[6/6] Skipping service restart."
 fi
 
 if [[ -f "$REPO_DIR/sub2api" ]] && ! git -C "$REPO_DIR" ls-files --error-unmatch -- sub2api >/dev/null 2>&1; then
