@@ -10,7 +10,7 @@
             ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-800 dark:text-dark-400 dark:hover:bg-dark-700'
         ]"
-        :title="hasUpdate ? t('version.updateAvailable') : t('version.upToDate')"
+        :title="versionBadgeTitle"
       >
         <span v-if="currentVersion" class="font-medium">v{{ currentVersion }}</span>
         <span
@@ -107,7 +107,7 @@
                 <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
                   {{
                     hasUpdate
-                      ? t('version.latestVersion') + ': v' + latestVersion
+                      ? versionSummaryLabel + ': v' + latestVersion
                       : t('version.upToDate')
                   }}
                 </p>
@@ -247,7 +247,7 @@
                   </div>
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
-                      {{ t('version.updateAvailable') }}
+                      {{ t('version.upstreamUpdateAvailable') }}
                     </p>
                     <p class="text-xs text-amber-600/70 dark:text-amber-400/70">
                       v{{ latestVersion }}
@@ -419,6 +419,14 @@ const restartCountdown = ref(0)
 
 // Only show update check for release builds (binary/docker deployment)
 const isReleaseBuild = computed(() => buildType.value === 'release')
+const isSourceBuild = computed(() => buildType.value === 'source')
+const versionBadgeTitle = computed(() => {
+  if (!hasUpdate.value) return t('version.upToDate')
+  return isSourceBuild.value ? t('version.upstreamUpdateAvailable') : t('version.updateAvailable')
+})
+const versionSummaryLabel = computed(() =>
+  isSourceBuild.value ? t('version.upstreamVersion') : t('version.latestVersion')
+)
 
 function toggleDropdown() {
   dropdownOpen.value = !dropdownOpen.value
