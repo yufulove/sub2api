@@ -10,13 +10,15 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    reviewUsage: 'Check usage',
     // User-focused value proposition
-    heroSubtitle: 'One Key, All AI Models',
-    heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
+    heroEyebrow: 'AI API relay gateway for developers',
+    heroSubtitle: 'One entry point for Claude, GPT, Gemini, and coding tools',
+    heroDescription: 'Unify Base URL, API keys, groups, quotas, and usage analytics so OpenCode, Claude Code, Codex, and other clients connect to controlled model capacity.',
     tags: {
-      subscriptionToApi: 'Subscription to API',
-      stickySession: 'Session Persistence',
-      realtimeBilling: 'Pay As You Go'
+      subscriptionToApi: 'OpenAI-compatible API',
+      stickySession: 'Smart routing and failover',
+      realtimeBilling: 'Usage and cost visibility'
     },
     // Pain points section
     painPoints: {
@@ -46,12 +48,12 @@ export default {
       subtitle: 'Three simple steps to stress-free AI access'
     },
     features: {
-      unifiedGateway: 'One-Click Access',
-      unifiedGatewayDesc: 'Get a single API key to call all connected AI models. No separate applications needed.',
-      multiAccount: 'Always Reliable',
-      multiAccountDesc: 'Smart routing across multiple upstream accounts with automatic failover. Say goodbye to errors.',
-      balanceQuota: 'Pay What You Use',
-      balanceQuotaDesc: 'Usage-based billing with quota limits. Full visibility into team consumption.'
+      unifiedGateway: 'Developer-ready access',
+      unifiedGatewayDesc: 'Use one Base URL and API key across OpenCode, Claude Code, Codex, Cherry Studio, and compatible clients.',
+      multiAccount: 'Account-pool routing',
+      multiAccountDesc: 'Route requests by group across upstream accounts with failover, retries, and load balancing.',
+      balanceQuota: 'Controlled cost',
+      balanceQuotaDesc: 'Manage balance, subscriptions, key quotas, and model rates in one place with traceable team usage.'
     },
     // Comparison section
     comparison: {
@@ -90,8 +92,8 @@ export default {
       }
     },
     providers: {
-      title: 'Supported AI Models',
-      description: 'One API, Multiple Choices',
+      title: 'One gateway for common models and clients',
+      description: 'Models, accounts, and tools converge behind a unified relay',
       supported: 'Supported',
       soon: 'Soon',
       claude: 'Claude',

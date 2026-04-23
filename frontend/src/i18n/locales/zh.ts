@@ -10,13 +10,15 @@ export default {
     login: '登录',
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
+    reviewUsage: '查看用量查询',
     // 新增：面向用户的价值主张
-    heroSubtitle: '一个密钥，畅用多个 AI 模型',
-    heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
+    heroEyebrow: '面向开发者的 AI API 中转网关',
+    heroSubtitle: '一个入口，稳定连接 Claude、GPT、Gemini 和开发工具',
+    heroDescription: '统一 Base URL、密钥、分组、限额和用量统计，让 OpenCode、Claude Code、Codex 等客户端直接接入可控的模型资源。',
     tags: {
-      subscriptionToApi: '订阅转 API',
-      stickySession: '会话保持',
-      realtimeBilling: '按量计费'
+      subscriptionToApi: 'OpenAI 兼容接口',
+      stickySession: '智能路由与容灾',
+      realtimeBilling: '用量与成本可见'
     },
     // 用户痛点区块
     painPoints: {
@@ -46,12 +48,12 @@ export default {
       subtitle: '简单三步，开始省心使用 AI'
     },
     features: {
-      unifiedGateway: '一键接入',
-      unifiedGatewayDesc: '获取一个 API 密钥，即可调用所有已接入的 AI 模型，无需分别申请。',
-      multiAccount: '稳定可靠',
-      multiAccountDesc: '智能调度多个上游账号，自动切换和负载均衡，告别频繁报错。',
-      balanceQuota: '用多少付多少',
-      balanceQuotaDesc: '按实际使用量计费，支持设置配额上限，团队用量一目了然。'
+      unifiedGateway: '开发者直连',
+      unifiedGatewayDesc: '用同一个 Base URL 和 API Key 接入 OpenCode、Claude Code、Codex、Cherry Studio 等客户端。',
+      multiAccount: '账号池调度',
+      multiAccountDesc: '按分组把请求路由到不同上游账号，自动切换、失败重试和负载均衡。',
+      balanceQuota: '成本可控',
+      balanceQuotaDesc: '余额、订阅、密钥额度和模型倍率集中管理，团队用量可以追踪和限制。'
     },
     // 优势对比
     comparison: {
@@ -90,8 +92,8 @@ export default {
       }
     },
     providers: {
-      title: '已支持的 AI 模型',
-      description: '一个 API，多种选择',
+      title: '一个入口，覆盖常用模型与客户端',
+      description: '模型、账号和工具都收敛到统一网关',
       supported: '已支持',
       soon: '即将推出',
       claude: 'Claude',

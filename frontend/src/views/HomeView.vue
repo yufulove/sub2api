@@ -15,35 +15,26 @@
   <!-- Default Home Page -->
   <div
     v-else
-    class="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
+    class="relative flex min-h-screen flex-col overflow-hidden bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-white"
   >
     <!-- Background Decorations -->
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
       <div
-        class="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-primary-400/20 blur-3xl"
+        class="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-[size:44px_44px] dark:bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)]"
       ></div>
-      <div
-        class="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary-500/15 blur-3xl"
-      ></div>
-      <div
-        class="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-primary-300/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-primary-400/10 blur-3xl"
-      ></div>
-      <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
-      ></div>
+      <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80"></div>
+      <div class="absolute right-0 top-0 h-full w-1/2 bg-[linear-gradient(135deg,rgba(20,184,166,0.14),rgba(59,130,246,0.08)_45%,transparent_70%)]"></div>
     </div>
 
     <!-- Header -->
     <header class="relative z-20 px-6 py-4">
       <nav class="mx-auto flex max-w-6xl items-center justify-between">
         <!-- Logo -->
-        <div class="flex items-center">
-          <div class="h-10 w-10 overflow-hidden rounded-xl shadow-md">
-            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 overflow-hidden rounded-lg shadow-md shadow-slate-900/10 dark:shadow-black/40">
+            <img :src="siteLogo || '/brand-mark.svg'" alt="Logo" class="h-full w-full object-contain" />
           </div>
+          <span class="hidden text-sm font-semibold text-slate-900 dark:text-white sm:inline">{{ siteName }}</span>
         </div>
 
         <!-- Nav Actions -->
@@ -113,68 +104,81 @@
     <!-- Main Content -->
     <main class="relative z-10 flex-1 px-6 py-16">
       <div class="mx-auto max-w-6xl">
-        <!-- Hero Section - Left/Right Layout -->
-        <div class="mb-12 flex flex-col items-center justify-between gap-12 lg:flex-row lg:gap-16">
-          <!-- Left: Text Content -->
-          <div class="flex-1 text-center lg:text-left">
-            <h1
-              class="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"
-            >
-              {{ siteName }}
-            </h1>
-            <p class="mb-8 text-lg text-gray-600 dark:text-dark-300 md:text-xl">
-              {{ siteSubtitle }}
-            </p>
-
-            <!-- CTA Button -->
-            <div>
-              <router-link
-                :to="isAuthenticated ? dashboardPath : '/login'"
-                class="btn btn-primary px-8 py-3 text-base shadow-lg shadow-primary-500/30"
-              >
-                {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
-                <Icon name="arrowRight" size="md" class="ml-2" :stroke-width="2" />
-              </router-link>
+        <!-- Hero Section -->
+        <section class="brand-hero mb-10">
+          <div class="hero-visual" aria-hidden="true">
+            <div class="route-node route-source">
+              <span>API Key</span>
+              <strong>sk-live</strong>
             </div>
-          </div>
+            <div class="route-node route-gateway">
+              <span>Gateway</span>
+              <strong>Router</strong>
+            </div>
+            <div class="route-node route-model route-claude">Claude</div>
+            <div class="route-node route-model route-gpt">GPT</div>
+            <div class="route-node route-model route-gemini">Gemini</div>
+            <div class="route-line route-line-a"></div>
+            <div class="route-line route-line-b"></div>
+            <div class="route-line route-line-c"></div>
 
-          <!-- Right: Terminal Animation -->
-          <div class="flex flex-1 justify-center lg:justify-end">
-            <div class="terminal-container">
-              <div class="terminal-window">
-                <!-- Window header -->
-                <div class="terminal-header">
-                  <div class="terminal-buttons">
-                    <span class="btn-close"></span>
-                    <span class="btn-minimize"></span>
-                    <span class="btn-maximize"></span>
-                  </div>
-                  <span class="terminal-title">terminal</span>
-                </div>
-                <!-- Terminal content -->
-                <div class="terminal-body">
-                  <div class="code-line line-1">
-                    <span class="code-prompt">$</span>
-                    <span class="code-cmd">curl</span>
-                    <span class="code-flag">-X POST</span>
-                    <span class="code-url">/v1/messages</span>
-                  </div>
-                  <div class="code-line line-2">
-                    <span class="code-comment"># Routing to upstream...</span>
-                  </div>
-                  <div class="code-line line-3">
-                    <span class="code-success">200 OK</span>
-                    <span class="code-response">{ "content": "Hello!" }</span>
-                  </div>
-                  <div class="code-line line-4">
-                    <span class="code-prompt">$</span>
-                    <span class="cursor"></span>
-                  </div>
-                </div>
+            <div class="gateway-console">
+              <div class="console-header">
+                <span class="console-dot bg-sky-400"></span>
+                <span class="console-dot bg-emerald-400"></span>
+                <span class="console-dot bg-amber-400"></span>
+                <span class="ml-auto text-[11px] uppercase text-slate-400">live route</span>
+              </div>
+              <div class="console-row">
+                <span class="text-emerald-300">POST</span>
+                <span>/v1/chat/completions</span>
+                <strong>200</strong>
+              </div>
+              <div class="console-row">
+                <span class="text-sky-300">MODEL</span>
+                <span>gpt-5.4 -> fallback ready</span>
+                <strong>34ms</strong>
+              </div>
+              <div class="console-row">
+                <span class="text-violet-300">COST</span>
+                <span>quota, limits, team usage</span>
+                <strong>$0.002</strong>
               </div>
             </div>
           </div>
-        </div>
+
+          <div class="hero-copy">
+            <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-3 py-1.5 text-sm font-medium text-teal-700 shadow-sm backdrop-blur dark:border-teal-500/30 dark:bg-slate-900/70 dark:text-teal-200">
+              <Icon name="terminal" size="sm" />
+              {{ t('home.heroEyebrow') }}
+            </div>
+            <h1 class="text-5xl font-bold text-slate-950 dark:text-white md:text-6xl lg:text-7xl">
+              {{ siteName }}
+            </h1>
+            <p class="mt-5 max-w-2xl text-xl leading-8 text-slate-700 dark:text-slate-200 md:text-2xl">
+              {{ siteSubtitle }}
+            </p>
+            <p class="mt-4 max-w-2xl text-base leading-7 text-slate-500 dark:text-slate-400">
+              {{ t('home.heroDescription') }}
+            </p>
+
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <router-link
+                :to="isAuthenticated ? dashboardPath : '/login'"
+                class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+              >
+                {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
+                <Icon name="arrowRight" size="sm" class="ml-2" :stroke-width="2" />
+              </router-link>
+              <router-link
+                to="/key-usage"
+                class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white/75 px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:border-teal-500"
+              >
+                {{ t('home.reviewUsage') }}
+              </router-link>
+            </div>
+          </div>
+        </section>
 
         <!-- Feature Tags - Centered -->
         <div class="mb-12 flex flex-wrap items-center justify-center gap-4 md:gap-6">
@@ -417,9 +421,23 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 
 // Site settings - directly from appStore (already initialized from injected config)
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || 'Sub2API')
+const genericSiteNames = new Set(['Sub2API'])
+const genericSubtitles = new Set([
+  'Subscription to API Conversion Platform',
+  'AI API Gateway Platform'
+])
+
+const siteName = computed(() => {
+  const configuredName = (appStore.cachedPublicSettings?.site_name || appStore.siteName || '').trim()
+  return configuredName && !genericSiteNames.has(configuredName) ? configuredName : 'API中转'
+})
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
+const siteSubtitle = computed(() => {
+  const configuredSubtitle = (appStore.cachedPublicSettings?.site_subtitle || '').trim()
+  return configuredSubtitle && !genericSubtitles.has(configuredSubtitle)
+    ? configuredSubtitle
+    : t('home.heroSubtitle')
+})
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 
@@ -481,6 +499,217 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.brand-hero {
+  position: relative;
+  min-height: 460px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.94), rgba(240, 253, 250, 0.74) 52%, rgba(239, 246, 255, 0.72)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72));
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 42rem;
+  padding: 4.5rem 3rem;
+}
+
+.hero-visual {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0, transparent 39%, rgba(15, 23, 42, 0.05) 39%, rgba(15, 23, 42, 0.05) 40%, transparent 40%),
+    repeating-linear-gradient(0deg, transparent 0 47px, rgba(15, 23, 42, 0.05) 48px);
+}
+
+.gateway-console {
+  position: absolute;
+  top: 4rem;
+  right: 3rem;
+  width: min(30rem, 44vw);
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.console-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  padding: 0.8rem 1rem;
+}
+
+.console-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+}
+
+.console-row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+.console-row + .console-row {
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.console-row strong {
+  color: #f8fafc;
+}
+
+.route-node {
+  position: absolute;
+  z-index: 1;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 7.5rem;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 0.8rem 1rem;
+  box-shadow: 0 14px 45px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+  color: #0f172a;
+}
+
+.route-node span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.route-node strong {
+  font-size: 1rem;
+}
+
+.route-source {
+  right: 31rem;
+  bottom: 5rem;
+}
+
+.route-gateway {
+  right: 18rem;
+  bottom: 7.2rem;
+  border-color: rgba(14, 165, 233, 0.28);
+}
+
+.route-model {
+  min-width: auto;
+  padding: 0.65rem 0.9rem;
+  font-weight: 700;
+}
+
+.route-claude {
+  right: 5rem;
+  bottom: 10.5rem;
+  border-color: rgba(249, 115, 22, 0.25);
+}
+
+.route-gpt {
+  right: 7.2rem;
+  bottom: 6.5rem;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.route-gemini {
+  right: 4rem;
+  bottom: 2.8rem;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.route-line {
+  position: absolute;
+  right: 8rem;
+  bottom: 8rem;
+  width: 24rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.7), transparent);
+  transform-origin: right center;
+}
+
+.route-line-a {
+  transform: rotate(-10deg);
+}
+
+.route-line-b {
+  transform: rotate(0deg);
+}
+
+.route-line-c {
+  transform: rotate(12deg);
+}
+
+:deep(.dark) .brand-hero {
+  border-color: rgba(51, 65, 85, 0.85);
+  background:
+    linear-gradient(120deg, rgba(15, 23, 42, 0.94), rgba(8, 47, 73, 0.72) 55%, rgba(6, 78, 59, 0.58)),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.78));
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.32);
+}
+
+:deep(.dark) .route-node {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.74);
+  color: #f8fafc;
+}
+
+:deep(.dark) .route-node span {
+  color: #94a3b8;
+}
+
+@media (max-width: 1024px) {
+  .hero-copy {
+    padding: 3.5rem 2rem;
+  }
+
+  .gateway-console {
+    right: -4rem;
+    width: 28rem;
+    opacity: 0.34;
+  }
+
+  .route-source,
+  .route-gateway,
+  .route-model,
+  .route-line {
+    opacity: 0.28;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-hero {
+    min-height: 560px;
+    border-radius: 12px;
+  }
+
+  .hero-copy {
+    padding: 2.5rem 1.25rem;
+  }
+
+  .gateway-console {
+    top: auto;
+    right: -8rem;
+    bottom: 1.5rem;
+    width: 26rem;
+    opacity: 0.22;
+  }
+}
+
 /* Terminal Container */
 .terminal-container {
   position: relative;
