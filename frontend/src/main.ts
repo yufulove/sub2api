@@ -29,7 +29,7 @@ async function bootstrap() {
 
   // Set document title immediately after config is loaded
   if (appStore.siteName) {
-    document.title = `${appStore.siteName} - AI API 网关`
+    document.title = `${appStore.siteName} - AI API Gateway`
   }
 
   await initI18n()

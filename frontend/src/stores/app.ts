@@ -14,6 +14,17 @@ import {
 } from '@/api/admin/system'
 import { getPublicSettings as fetchPublicSettingsAPI } from '@/api/auth'
 
+const DEFAULT_SITE_NAME = 'FionaAI'
+const LEGACY_SITE_NAMES = new Set(['sub2api', 'api中转', 'api中轉'])
+
+function normalizeSiteName(value?: string): string {
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  if (!trimmed || LEGACY_SITE_NAMES.has(trimmed.toLowerCase())) {
+    return DEFAULT_SITE_NAME
+  }
+  return trimmed
+}
+
 export const useAppStore = defineStore('app', () => {
   // ==================== State ====================
 
@@ -25,7 +36,7 @@ export const useAppStore = defineStore('app', () => {
   // Public settings cache state
   const publicSettingsLoaded = ref<boolean>(false)
   const publicSettingsLoading = ref<boolean>(false)
-  const siteName = ref<string>('API中转')
+  const siteName = ref<string>(DEFAULT_SITE_NAME)
   const siteLogo = ref<string>('')
   const siteVersion = ref<string>('')
   const contactInfo = ref<string>('')
@@ -288,11 +299,13 @@ export const useAppStore = defineStore('app', () => {
    * Apply settings to store state (internal helper to avoid code duplication)
    */
   function applySettings(config: PublicSettings): void {
+    const normalizedSiteName = normalizeSiteName(config.site_name)
+    const normalizedConfig = { ...config, site_name: normalizedSiteName }
     if (typeof window !== 'undefined') {
-      window.__APP_CONFIG__ = { ...config }
+      window.__APP_CONFIG__ = { ...normalizedConfig }
     }
-    cachedPublicSettings.value = config
-    siteName.value = config.site_name || 'API中转'
+    cachedPublicSettings.value = normalizedConfig
+    siteName.value = normalizedSiteName
     siteLogo.value = config.site_logo || ''
     siteVersion.value = config.version || ''
     contactInfo.value = config.contact_info || ''
@@ -309,7 +322,7 @@ export const useAppStore = defineStore('app', () => {
     // Check for injected config from server (eliminates flash)
     if (!publicSettingsLoaded.value && !force && window.__APP_CONFIG__) {
       applySettings(window.__APP_CONFIG__)
-      return window.__APP_CONFIG__
+      return cachedPublicSettings.value ? { ...cachedPublicSettings.value } : window.__APP_CONFIG__
     }
 
     // Return cached data if available and not forcing refresh
@@ -364,7 +377,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       const data = await fetchPublicSettingsAPI()
       applySettings(data)
-      return data
+      return cachedPublicSettings.value ? { ...cachedPublicSettings.value } : data
     } catch (error) {
       console.error('Failed to fetch public settings:', error)
       return null

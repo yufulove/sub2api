@@ -4861,7 +4861,7 @@ const form = reactive<SettingsForm>({
   default_concurrency: 1,
   default_subscriptions: [],
   force_email_on_third_party_signup: false,
-  site_name: "Sub2API",
+  site_name: "FionaAI",
   site_logo: "",
   site_subtitle: "Subscription to API Conversion Platform",
   api_base_url: "",
