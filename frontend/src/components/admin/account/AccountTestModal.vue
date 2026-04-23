@@ -238,7 +238,7 @@ import Select from '@/components/common/Select.vue'
 import TextArea from '@/components/common/TextArea.vue'
 import { Icon } from '@/components/icons'
 import { useClipboard } from '@/composables/useClipboard'
-import { getPlatformModelOptions, normalizePlatformModelOptions, pickDefaultTestModel } from '@/composables/modelCatalog'
+import { normalizePlatformModelOptions, pickDefaultTestModel } from '@/composables/modelCatalog'
 import { adminAPI } from '@/api/admin'
 import type { Account, ClaudeModel } from '@/types'
 
@@ -330,18 +330,10 @@ const loadAvailableModels = async () => {
   selectedModelId.value = '' // Reset selection before loading
   try {
     const models = await adminAPI.accounts.getAvailableModels(props.account.id)
-    const normalizedModels = normalizePlatformModelOptions(props.account.platform, models) as ClaudeModel[]
-    // OpenAI OAuth test flow talks to the upstream ChatGPT backend directly and
-    // does not enforce the account's local model_mapping allowlist. Showing the
-    // platform defaults here keeps same-capability OAuth accounts consistent.
-    const displayModels =
-      props.account.platform === 'openai' && props.account.type === 'oauth'
-        ? (getPlatformModelOptions('openai') as ClaudeModel[])
-        : normalizedModels
     availableModels.value =
       props.account.platform === 'gemini' || props.account.platform === 'antigravity'
-        ? sortTestModels(displayModels)
-        : displayModels
+        ? sortTestModels(normalizePlatformModelOptions(props.account.platform, models) as ClaudeModel[])
+        : (normalizePlatformModelOptions(props.account.platform, models) as ClaudeModel[])
     selectedModelId.value = pickDefaultTestModel(props.account.platform, availableModels.value)
   } catch (error) {
     console.error('Failed to load available models:', error)

@@ -1802,6 +1802,13 @@ func (h *AccountHandler) GetAvailableModels(c *gin.Context) {
 
 	// Handle OpenAI accounts
 	if account.IsOpenAI() {
+		if provider, ok := h.adminService.(service.OpenAIAvailableModelsProvider); ok {
+			if models, err := provider.GetOpenAIAvailableModels(c.Request.Context(), account); err == nil && len(models) > 0 {
+				response.Success(c, models)
+				return
+			}
+		}
+
 		// OpenAI 自动透传会绕过常规模型改写，测试/模型列表也应回落到默认模型集。
 		if account.IsOpenAIPassthroughEnabled() {
 			response.Success(c, openai.DefaultModels)

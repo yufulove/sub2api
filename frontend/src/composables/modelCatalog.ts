@@ -35,7 +35,36 @@ const curatedModelDisplayNames: Record<string, string> = {
 }
 
 export function getModelDisplayName(id: string): string {
-  return curatedModelDisplayNames[id] || id
+  return curatedModelDisplayNames[id] || inferModelDisplayName(id)
+}
+
+function inferModelDisplayName(id: string): string {
+  const trimmed = id.trim()
+  if (!trimmed) return id
+
+  if (trimmed.startsWith('gpt-')) {
+    return `GPT-${humanizeModelSuffix(trimmed.slice(4))}`
+  }
+
+  if (trimmed.startsWith('chatgpt-')) {
+    return `ChatGPT ${humanizeModelSuffix(trimmed.slice(8))}`
+  }
+
+  return id
+}
+
+function humanizeModelSuffix(suffix: string): string {
+  if (!suffix) return suffix
+
+  return suffix
+    .split('-')
+    .filter(Boolean)
+    .map((segment, index) => {
+      if (index === 0) return segment
+      if (/^\d+(\.\d+)?$/.test(segment)) return segment
+      return segment.charAt(0).toUpperCase() + segment.slice(1)
+    })
+    .join(' ')
 }
 
 export function getPlatformModelOptions(platform: string): PlatformModelOption[] {
@@ -52,6 +81,7 @@ export function normalizePlatformModelOptions(
   models: Array<{ id: string; display_name?: string; type?: string; created_at?: string }>
 ): PlatformModelOption[] {
   const orderedIDs = getModelsByPlatform(platform)
+  const orderedIDSet = new Set(orderedIDs)
   const byID = new Map<string, { id: string; display_name?: string; type?: string; created_at?: string }>()
 
   for (const model of models) {
@@ -72,7 +102,17 @@ export function normalizePlatformModelOptions(
       }
     })
 
-  return normalized.length > 0 ? normalized : getPlatformModelOptions(platform)
+  const passthroughModels = models
+    .filter(model => model?.id && !orderedIDSet.has(model.id))
+    .map(model => ({
+      id: model.id,
+      type: model.type || 'model',
+      display_name: model.display_name || getModelDisplayName(model.id),
+      created_at: model.created_at || ''
+    }))
+
+  const merged = [...normalized, ...passthroughModels]
+  return merged.length > 0 ? merged : getPlatformModelOptions(platform)
 }
 
 export function pickDefaultTestModel(platform: string, models: Array<{ id: string }>): string {
