@@ -33,6 +33,22 @@ export function calculateTokenPricePerMillion(
   return unitPrice * TOKENS_PER_MILLION
 }
 
+export function calculateUsageUnitPrice(
+  totalCost: number | null | undefined,
+  billingMode: string | null | undefined,
+  imageCount?: number | null | undefined
+): number | null {
+  if (!isFiniteNumber(totalCost)) {
+    return null
+  }
+
+  if (billingMode === 'image' && isFiniteNumber(imageCount) && imageCount > 0) {
+    return totalCost / imageCount
+  }
+
+  return totalCost
+}
+
 export function formatTokenPricePerMillion(
   cost: number | null | undefined,
   tokens: number | null | undefined,

@@ -293,7 +293,7 @@
             <!-- Per-request / image billing: show unit price -->
             <div v-else class="flex items-center justify-between gap-4">
               <span class="text-gray-400">{{ tooltipData.billing_mode === BILLING_MODE_IMAGE ? t('usage.imageUnitPrice') : t('usage.unitPrice') }}</span>
-              <span class="font-medium text-sky-300">${{ tooltipData.total_cost?.toFixed(6) || '0.000000' }}</span>
+              <span class="font-medium text-sky-300">${{ formatUsageUnitPriceForDisplay(tooltipData) }}</span>
             </div>
             <div v-if="tooltipData && tooltipData.cache_creation_cost > 0" class="flex items-center justify-between gap-4">
               <span class="text-gray-400">{{ t('admin.usage.cacheCreationCost') }}</span>
@@ -348,7 +348,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDateTime, formatReasoningEffort } from '@/utils/format'
 import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
-import { formatTokenPricePerMillion } from '@/utils/usagePricing'
+import { calculateUsageUnitPrice, formatTokenPricePerMillion } from '@/utils/usagePricing'
 import { getUsageServiceTierLabel } from '@/utils/usageServiceTier'
 import { resolveUsageRequestType } from '@/utils/usageRequestType'
 import { getBillingModeLabel, getBillingModeBadgeClass, BILLING_MODE_TOKEN, BILLING_MODE_IMAGE } from '@/utils/billingMode'
@@ -358,6 +358,11 @@ function accountBilled(row: { total_cost?: number | null; account_stats_cost?: n
   const base = row.account_stats_cost != null ? row.account_stats_cost : (row.total_cost ?? 0)
   const result = base * (row.account_rate_multiplier ?? 1)
   return Number.isNaN(result) ? 0 : result
+}
+
+function formatUsageUnitPriceForDisplay(row: AdminUsageLog | null): string {
+  const unitPrice = calculateUsageUnitPrice(row?.total_cost, row?.billing_mode, row?.image_count)
+  return (unitPrice ?? 0).toFixed(6)
 }
 
 import DataTable from '@/components/common/DataTable.vue'

@@ -461,7 +461,7 @@
             <!-- Per-request / image billing: show unit price -->
             <div v-else class="flex items-center justify-between gap-4">
               <span class="text-gray-400">{{ tooltipData.billing_mode === 'image' ? t('usage.imageUnitPrice') : t('usage.unitPrice') }}</span>
-              <span class="font-medium text-sky-300">${{ tooltipData.total_cost?.toFixed(6) || '0.000000' }}</span>
+              <span class="font-medium text-sky-300">${{ formatUsageUnitPriceForDisplay(tooltipData) }}</span>
             </div>
             <div v-if="tooltipData && tooltipData.cache_creation_cost > 0" class="flex items-center justify-between gap-4">
               <span class="text-gray-400">{{ t('admin.usage.cacheCreationCost') }}</span>
@@ -521,7 +521,7 @@ import type { Column } from '@/components/common/types'
 import { formatDateTime, formatReasoningEffort } from '@/utils/format'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
-import { formatTokenPricePerMillion } from '@/utils/usagePricing'
+import { calculateUsageUnitPrice, formatTokenPricePerMillion } from '@/utils/usagePricing'
 import { getUsageServiceTierLabel } from '@/utils/usageServiceTier'
 import { resolveUsageRequestType } from '@/utils/usageRequestType'
 import { getBillingModeLabel, getBillingModeBadgeClass } from '@/utils/billingMode'
@@ -657,6 +657,11 @@ const getRequestTypeExportText = (log: UsageLog): string => {
 const formatUsageEndpoints = (log: UsageLog): string => {
   const inbound = log.inbound_endpoint?.trim()
   return inbound || '-'
+}
+
+const formatUsageUnitPriceForDisplay = (log: UsageLog | null): string => {
+  const unitPrice = calculateUsageUnitPrice(log?.total_cost, log?.billing_mode, log?.image_count)
+  return (unitPrice ?? 0).toFixed(6)
 }
 
 const formatTokens = (value: number): string => {
