@@ -13,6 +13,17 @@ import {
 } from '@/api/admin/system'
 import { getPublicSettings as fetchPublicSettingsAPI } from '@/api/auth'
 
+const DEFAULT_SITE_NAME = 'FionaAI'
+const LEGACY_SITE_NAME = 'Sub2API'
+
+function normalizeSiteName(value?: string): string {
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  if (!trimmed || trimmed.toLowerCase() === LEGACY_SITE_NAME.toLowerCase()) {
+    return DEFAULT_SITE_NAME
+  }
+  return trimmed
+}
+
 export const useAppStore = defineStore('app', () => {
   // ==================== State ====================
 
@@ -24,7 +35,7 @@ export const useAppStore = defineStore('app', () => {
   // Public settings cache state
   const publicSettingsLoaded = ref<boolean>(false)
   const publicSettingsLoading = ref<boolean>(false)
-  const siteName = ref<string>('Sub2API')
+  const siteName = ref<string>(DEFAULT_SITE_NAME)
   const siteLogo = ref<string>('')
   const siteVersion = ref<string>('')
   const contactInfo = ref<string>('')
@@ -283,8 +294,9 @@ export const useAppStore = defineStore('app', () => {
    * Apply settings to store state (internal helper to avoid code duplication)
    */
   function applySettings(config: PublicSettings): void {
-    cachedPublicSettings.value = config
-    siteName.value = config.site_name || 'Sub2API'
+    const normalizedSiteName = normalizeSiteName(config.site_name)
+    cachedPublicSettings.value = { ...config, site_name: normalizedSiteName }
+    siteName.value = normalizedSiteName
     siteLogo.value = config.site_logo || ''
     siteVersion.value = config.version || ''
     contactInfo.value = config.contact_info || ''
@@ -301,7 +313,7 @@ export const useAppStore = defineStore('app', () => {
     // Check for injected config from server (eliminates flash)
     if (!publicSettingsLoaded.value && !force && window.__APP_CONFIG__) {
       applySettings(window.__APP_CONFIG__)
-      return window.__APP_CONFIG__
+      return cachedPublicSettings.value ? { ...cachedPublicSettings.value } : window.__APP_CONFIG__
     }
 
     // Return cached data if available and not forcing refresh
@@ -344,7 +356,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       const data = await fetchPublicSettingsAPI()
       applySettings(data)
-      return data
+      return cachedPublicSettings.value ? { ...cachedPublicSettings.value } : data
     } catch (error) {
       console.error('Failed to fetch public settings:', error)
       return null
