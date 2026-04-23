@@ -722,7 +722,8 @@ export default {
         openaiSdk: 'OpenAI SDK',
         cherryStudio: 'Cherry Studio',
         chatbox: 'Chatbox',
-        curl: 'curl'
+        curl: 'curl',
+        more: '更多客户端'
       },
       openaiSdk: {
         path: 'Node.js / OpenAI SDK',

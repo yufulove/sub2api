@@ -89,10 +89,10 @@
         </div>
 
         <!-- Client Tabs -->
-        <div v-if="clientTabs.length" class="rounded-xl border border-gray-200 bg-gray-50/70 p-2 dark:border-dark-700 dark:bg-dark-900/30">
+        <div v-if="primaryClientTabs.length || moreClientTabs.length" class="rounded-xl border border-gray-200 bg-gray-50/70 p-2 dark:border-dark-700 dark:bg-dark-900/30">
           <nav class="flex flex-wrap gap-2" aria-label="Client">
             <button
-              v-for="tab in clientTabs"
+              v-for="tab in primaryClientTabs"
               :key="tab.id"
               @click="activeClientTab = tab.id"
               :class="[
@@ -105,6 +105,26 @@
               <component :is="tab.icon" class="h-4 w-4 flex-shrink-0" />
               <span class="truncate">{{ tab.label }}</span>
             </button>
+            <select
+              v-if="moreClientTabs.length"
+              :value="moreClientSelectValue"
+              :class="[
+                'rounded-lg border bg-white px-3 py-2 text-sm font-medium transition-colors dark:bg-dark-800',
+                moreClientActive
+                  ? 'border-primary-500 text-primary-700 shadow-sm dark:text-primary-300'
+                  : 'border-transparent text-gray-500 hover:border-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:border-dark-600 dark:hover:text-gray-300'
+              ]"
+              @change="handleMoreClientChange"
+            >
+              <option disabled value="">{{ t('keys.useKeyModal.clientTabs.more') }}</option>
+              <option
+                v-for="tab in moreClientTabs"
+                :key="tab.id"
+                :value="tab.id"
+              >
+                {{ tab.label }}
+              </option>
+            </select>
           </nav>
         </div>
 
@@ -344,7 +364,7 @@ const maskApiKey = (value: string) => {
 const defaultClientTab = computed(() => {
   switch (props.platform) {
     case 'openai':
-      return 'openai-sdk'
+      return 'cherry-studio'
     case 'gemini':
       return 'gemini'
     case 'antigravity':
@@ -466,6 +486,41 @@ const clientTabs = computed((): TabConfig[] => {
       ]
   }
 })
+
+const primaryClientTabIds = computed(() => {
+  switch (props.platform) {
+    case 'openai':
+      return ['cherry-studio', 'chatbox', 'openai-sdk']
+    case 'gemini':
+      return ['gemini']
+    case 'antigravity':
+      return ['claude', 'gemini']
+    default:
+      return ['claude']
+  }
+})
+
+const primaryClientTabs = computed((): TabConfig[] => {
+  const tabsById = new Map(clientTabs.value.map((tab) => [tab.id, tab]))
+  return primaryClientTabIds.value
+    .map((id) => tabsById.get(id))
+    .filter((tab): tab is TabConfig => Boolean(tab))
+})
+
+const moreClientTabs = computed((): TabConfig[] => {
+  const primaryIds = new Set(primaryClientTabIds.value)
+  return clientTabs.value.filter((tab) => !primaryIds.has(tab.id))
+})
+
+const moreClientActive = computed(() => moreClientTabs.value.some((tab) => tab.id === activeClientTab.value))
+const moreClientSelectValue = computed(() => (moreClientActive.value ? activeClientTab.value : ''))
+
+const handleMoreClientChange = (event: Event) => {
+  const value = (event.target as HTMLSelectElement).value
+  if (value) {
+    activeClientTab.value = value
+  }
+}
 
 // Shell tabs (3 types for environment variable based configs)
 const shellTabs: TabConfig[] = [
