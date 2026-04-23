@@ -38,7 +38,7 @@ func (s *adminServiceImpl) GetOpenAIAvailableModels(ctx context.Context, account
 
 	switch {
 	case account.IsOpenAIOAuth():
-		return s.fetchOpenAIOAuthAvailableModels(ctx, account)
+		return OpenAIOAuthCodexCompatibleModels(), nil
 	case account.IsOpenAIApiKey():
 		return s.fetchOpenAIApiKeyAvailableModels(ctx, account)
 	default:

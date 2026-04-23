@@ -165,6 +165,27 @@ func TestAccountTestService_OpenAIOAuthRejectsUnsupportedModelBeforeRequest(t *t
 	require.Contains(t, recorder.Body.String(), "The 'o3' model is not supported when using Codex with a ChatGPT account.")
 }
 
+func TestAccountTestService_OpenAIOAuthRejectsUnsupportedSparkVariantBeforeRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, recorder := newTestContext()
+
+	upstream := &queuedHTTPUpstream{}
+	svc := &AccountTestService{httpUpstream: upstream}
+	account := &Account{
+		ID:          92,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{"access_token": "test-token"},
+	}
+
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.3-codex-spark", "")
+	require.Error(t, err)
+	require.EqualError(t, err, "The 'gpt-5.3-codex-spark' model is not supported when using Codex with a ChatGPT account.")
+	require.Empty(t, upstream.requests)
+	require.Contains(t, recorder.Body.String(), "The 'gpt-5.3-codex-spark' model is not supported when using Codex with a ChatGPT account.")
+}
+
 func TestAccountTestService_OpenAIOAuthNormalizesLegacyModelBeforeRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx, recorder := newTestContext()

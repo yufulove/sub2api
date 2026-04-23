@@ -7,10 +7,19 @@ import (
 	openaipkg "github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 )
 
+var openAIOAuthCodexCompatibleModelIDs = []string{
+	"gpt-5.4",
+	"gpt-5.4-mini",
+	"gpt-5.3-codex",
+	"gpt-5.2",
+	"gpt-image-1",
+	"gpt-image-1.5",
+	"gpt-image-2",
+}
+
 var strictOpenAIOAuthLegacyCodexModelMap = map[string]string{
 	"gpt-5":              "gpt-5.4",
-	"gpt-5-mini":         "gpt-5.4",
-	"gpt-5-nano":         "gpt-5.4",
+	"gpt-5-mini":         "gpt-5.4-mini",
 	"gpt-5.1":            "gpt-5.4",
 	"gpt-5.1-codex":      "gpt-5.3-codex",
 	"gpt-5.1-codex-max":  "gpt-5.3-codex",
@@ -21,6 +30,7 @@ var strictOpenAIOAuthLegacyCodexModelMap = map[string]string{
 }
 
 var strictOpenAIOAuthImageModelMap = buildStrictOpenAIOAuthImageModelMap()
+var openAIOAuthCodexCompatibleModelsByID = buildOpenAIOAuthCodexCompatibleModelsByID()
 
 func buildStrictOpenAIOAuthImageModelMap() map[string]string {
 	supported := make(map[string]string)
@@ -32,6 +42,40 @@ func buildStrictOpenAIOAuthImageModelMap() map[string]string {
 		supported[strings.ToLower(id)] = id
 	}
 	return supported
+}
+
+func buildOpenAIOAuthCodexCompatibleModelsByID() map[string]openaipkg.Model {
+	modelsByID := make(map[string]openaipkg.Model, len(openAIOAuthCodexCompatibleModelIDs))
+	for _, model := range openaipkg.DefaultModels {
+		id := strings.TrimSpace(model.ID)
+		if id == "" {
+			continue
+		}
+		modelsByID[id] = model
+	}
+
+	curated := make(map[string]openaipkg.Model, len(openAIOAuthCodexCompatibleModelIDs))
+	for _, id := range openAIOAuthCodexCompatibleModelIDs {
+		if model, ok := modelsByID[id]; ok {
+			curated[id] = model
+		}
+	}
+	return curated
+}
+
+func OpenAIOAuthCodexCompatibleModels() []openaipkg.Model {
+	models := make([]openaipkg.Model, 0, len(openAIOAuthCodexCompatibleModelIDs))
+	for _, id := range openAIOAuthCodexCompatibleModelIDs {
+		if model, ok := openAIOAuthCodexCompatibleModelsByID[id]; ok {
+			models = append(models, model)
+		}
+	}
+	return models
+}
+
+func isOpenAIOAuthCodexCompatibleCanonicalModelID(id string) bool {
+	_, ok := openAIOAuthCodexCompatibleModelsByID[strings.TrimSpace(id)]
+	return ok
 }
 
 func resolveOpenAIOAuthCodexTestModel(modelID string) (string, bool) {
@@ -48,16 +92,18 @@ func resolveOpenAIOAuthCodexTestModel(modelID string) (string, bool) {
 		return "", false
 	}
 
-	if mapped := getNormalizedCodexModel(modelID); mapped != "" {
-		return mapped, true
-	}
-
 	lower := strings.ToLower(modelID)
 	if mapped, ok := strictOpenAIOAuthLegacyCodexModelMap[lower]; ok {
 		return mapped, true
 	}
 	if imageModel, ok := strictOpenAIOAuthImageModelMap[lower]; ok {
 		return imageModel, true
+	}
+	if isOpenAIOAuthCodexCompatibleCanonicalModelID(modelID) {
+		return modelID, true
+	}
+	if mapped := getNormalizedCodexModel(modelID); mapped != "" && isOpenAIOAuthCodexCompatibleCanonicalModelID(mapped) {
+		return mapped, true
 	}
 	return "", false
 }
@@ -71,30 +117,34 @@ func filterOpenAIOAuthCodexCompatibleModels(models []openaipkg.Model) []openaipk
 		if id == "" {
 			continue
 		}
-		if _, ok := resolveOpenAIOAuthCodexTestModel(id); !ok {
+		canonicalID, ok := resolveOpenAIOAuthCodexTestModel(id)
+		if !ok {
 			continue
 		}
 
-		key := strings.ToLower(id)
+		key := strings.ToLower(canonicalID)
 		if _, exists := seen[key]; exists {
 			continue
 		}
 
-		model.ID = id
-		if strings.TrimSpace(model.Object) == "" {
-			model.Object = "model"
+		if canonicalModel, exists := openAIOAuthCodexCompatibleModelsByID[canonicalID]; exists {
+			filtered = append(filtered, canonicalModel)
+		} else {
+			model.ID = canonicalID
+			if strings.TrimSpace(model.Object) == "" {
+				model.Object = "model"
+			}
+			if strings.TrimSpace(model.Type) == "" {
+				model.Type = "model"
+			}
+			if strings.TrimSpace(model.DisplayName) == "" {
+				model.DisplayName = canonicalID
+			}
+			if strings.TrimSpace(model.OwnedBy) == "" {
+				model.OwnedBy = "openai"
+			}
+			filtered = append(filtered, model)
 		}
-		if strings.TrimSpace(model.Type) == "" {
-			model.Type = "model"
-		}
-		if strings.TrimSpace(model.DisplayName) == "" {
-			model.DisplayName = id
-		}
-		if strings.TrimSpace(model.OwnedBy) == "" {
-			model.OwnedBy = "openai"
-		}
-
-		filtered = append(filtered, model)
 		seen[key] = struct{}{}
 	}
 
