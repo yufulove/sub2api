@@ -520,7 +520,41 @@ export default {
     viewUsage: '查看使用记录',
     checkDetailedLogs: '查看详细的使用日志',
     redeemCode: '兑换码',
-    addBalanceWithCode: '使用兑换码充值'
+    addBalanceWithCode: '使用兑换码充值',
+    gettingStarted: {
+      title: '开始使用',
+      description: '先完成核心配置，再把真实流量接入平台。',
+      completed: '已完成 {done}/{total}',
+      done: '已完成',
+      next: '下一步',
+      pending: '待完成',
+      nextStep: '下一步：{step}',
+      allDoneDescription: '账号已经可用。后续重点关注用量、限额和成本变化。',
+      reviewUsage: '查看用量',
+      steps: {
+        funding: {
+          title: '添加可用额度',
+          description: '通过余额、兑换码或有效订阅获得可调用额度。',
+          ctaPurchase: '购买或充值',
+          ctaRedeem: '兑换码充值'
+        },
+        key: {
+          title: '创建 API 密钥',
+          description: '生成密钥，并分配到适合目标模型的分组。',
+          cta: '创建密钥'
+        },
+        client: {
+          title: '连接客户端',
+          description: '打开密钥使用指引，复制生成的配置，并发送第一次请求。',
+          cta: '打开使用指引'
+        },
+        usage: {
+          title: '检查用量',
+          description: '第一次调用后确认请求、成本、限额和模型分布。',
+          cta: '查看用量'
+        }
+      }
+    }
   },
 
   // Groups (shared)
