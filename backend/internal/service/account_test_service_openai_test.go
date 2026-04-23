@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -141,4 +142,54 @@ func TestAccountTestService_OpenAI429PersistsSnapshotWithoutRateLimit(t *testing
 	require.Zero(t, repo.rateLimitedID)
 	require.Nil(t, repo.rateLimitedAt)
 	require.Nil(t, account.RateLimitResetAt)
+}
+
+func TestAccountTestService_OpenAIOAuthRejectsUnsupportedModelBeforeRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, recorder := newTestContext()
+
+	upstream := &queuedHTTPUpstream{}
+	svc := &AccountTestService{httpUpstream: upstream}
+	account := &Account{
+		ID:          90,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{"access_token": "test-token"},
+	}
+
+	err := svc.testOpenAIAccountConnection(ctx, account, "o3", "")
+	require.Error(t, err)
+	require.EqualError(t, err, "The 'o3' model is not supported when using Codex with a ChatGPT account.")
+	require.Empty(t, upstream.requests)
+	require.Contains(t, recorder.Body.String(), "The 'o3' model is not supported when using Codex with a ChatGPT account.")
+}
+
+func TestAccountTestService_OpenAIOAuthNormalizesLegacyModelBeforeRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, recorder := newTestContext()
+
+	resp := newJSONResponse(http.StatusOK, "")
+	resp.Body = io.NopCloser(strings.NewReader("data: {\"type\":\"response.completed\"}\n\n"))
+
+	upstream := &queuedHTTPUpstream{responses: []*http.Response{resp}}
+	svc := &AccountTestService{httpUpstream: upstream}
+	account := &Account{
+		ID:          91,
+		Platform:    PlatformOpenAI,
+		Type:        AccountTypeOAuth,
+		Concurrency: 1,
+		Credentials: map[string]any{"access_token": "test-token"},
+	}
+
+	err := svc.testOpenAIAccountConnection(ctx, account, "gpt-5.1-codex", "")
+	require.NoError(t, err)
+	require.Len(t, upstream.requests, 1)
+
+	var payload map[string]any
+	body, readErr := io.ReadAll(upstream.requests[0].Body)
+	require.NoError(t, readErr)
+	require.NoError(t, json.Unmarshal(body, &payload))
+	require.Equal(t, "gpt-5.3-codex", payload["model"])
+	require.Contains(t, recorder.Body.String(), "test_complete")
 }

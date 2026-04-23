@@ -436,6 +436,18 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 		}
 	}
 
+	if account.IsOpenAIOAuth() {
+		normalizedModelID, ok := resolveOpenAIOAuthCodexTestModel(testModelID)
+		if !ok {
+			unsupportedModelID := strings.TrimSpace(testModelID)
+			if unsupportedModelID == "" {
+				unsupportedModelID = openai.DefaultTestModel
+			}
+			return s.sendErrorAndEnd(c, fmt.Sprintf("The '%s' model is not supported when using Codex with a ChatGPT account.", unsupportedModelID))
+		}
+		testModelID = normalizedModelID
+	}
+
 	// Route to image generation test if an image model is selected
 	if isOpenAIImageModel(testModelID) {
 		imagePrompt := strings.TrimSpace(prompt)

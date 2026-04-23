@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	adminOpenAIAvailableModelsURL            = "https://chatgpt.com/backend-api/models"
-	adminOpenAIAvailableModelsTimeout        = 15 * time.Second
-	adminOpenAIAvailableModelsHeaderTimeout  = 10 * time.Second
-	adminOpenAIAvailableModelsMaxBodyBytes   = 1 << 20
-	adminOpenAIAvailableModelsDefaultUA      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+	adminOpenAIAvailableModelsURL           = "https://chatgpt.com/backend-api/models"
+	adminOpenAIAvailableModelsTimeout       = 15 * time.Second
+	adminOpenAIAvailableModelsHeaderTimeout = 10 * time.Second
+	adminOpenAIAvailableModelsMaxBodyBytes  = 1 << 20
+	adminOpenAIAvailableModelsDefaultUA     = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 )
 
 // OpenAIAvailableModelsProvider is an optional capability exposed by admin services
@@ -65,7 +65,16 @@ func (s *adminServiceImpl) fetchOpenAIOAuthAvailableModels(ctx context.Context, 
 		req.Header.Set("chatgpt-account-id", chatgptAccountID)
 	}
 
-	return s.doOpenAIAvailableModelsRequest(req, account)
+	models, err := s.doOpenAIAvailableModelsRequest(req, account)
+	if err != nil {
+		return nil, err
+	}
+
+	models = filterOpenAIOAuthCodexCompatibleModels(models)
+	if len(models) == 0 {
+		return nil, fmt.Errorf("openai models response did not include codex-compatible models")
+	}
+	return models, nil
 }
 
 func (s *adminServiceImpl) fetchOpenAIApiKeyAvailableModels(ctx context.Context, account *Account) ([]openaipkg.Model, error) {
