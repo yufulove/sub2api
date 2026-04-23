@@ -591,7 +591,41 @@ export default {
     viewUsage: 'View Usage',
     checkDetailedLogs: 'Check detailed usage logs',
     redeemCode: 'Redeem Code',
-    addBalanceWithCode: 'Add balance with a code'
+    addBalanceWithCode: 'Add balance with a code',
+    gettingStarted: {
+      title: 'Getting Started',
+      description: 'Finish the core setup path before sending production traffic.',
+      completed: '{done}/{total} complete',
+      done: 'Done',
+      next: 'Next',
+      pending: 'Pending',
+      nextStep: 'Next step: {step}',
+      allDoneDescription: 'Your account is ready. Monitor usage and limits as traffic grows.',
+      reviewUsage: 'Review usage',
+      steps: {
+        funding: {
+          title: 'Add access',
+          description: 'Use balance, a redeem code, or an active subscription before creating real traffic.',
+          ctaPurchase: 'Buy or recharge',
+          ctaRedeem: 'Redeem code'
+        },
+        key: {
+          title: 'Create an API key',
+          description: 'Generate a key and assign it to the right group for the model family you need.',
+          cta: 'Create key'
+        },
+        client: {
+          title: 'Connect a client',
+          description: 'Open the key usage guide, copy the generated config, and send a first request.',
+          cta: 'Open key guide'
+        },
+        usage: {
+          title: 'Check usage',
+          description: 'Confirm requests, cost, rate limits, and model distribution after the first call.',
+          cta: 'View usage'
+        }
+      }
+    }
   },
 
   // Groups (shared)
