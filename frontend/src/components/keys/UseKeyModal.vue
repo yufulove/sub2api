@@ -28,6 +28,66 @@
           {{ platformDescription }}
         </p>
 
+        <!-- Connection Overview -->
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-800">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="space-y-1">
+              <p class="text-xs font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400">
+                {{ t('keys.useKeyModal.overview.label') }}
+              </p>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                {{ keyDisplayName }}
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ t('keys.useKeyModal.overview.description') }}
+              </p>
+            </div>
+            <span class="inline-flex w-fit items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-200 dark:bg-primary-900/20 dark:text-primary-300 dark:ring-primary-800">
+              {{ platformLabel }}
+            </span>
+          </div>
+
+          <div class="mt-4 grid gap-3 md:grid-cols-3">
+            <div
+              v-for="item in connectionFields"
+              :key="item.copyKey"
+              class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 dark:border-dark-700 dark:bg-dark-900/50"
+            >
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                {{ item.label }}
+              </p>
+              <div class="mt-1 flex items-center gap-2">
+                <code class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900 dark:text-white">
+                  {{ item.display }}
+                </code>
+                <button
+                  type="button"
+                  @click="copyQuickValue(item.copyValue, item.copyKey)"
+                  class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-white hover:text-primary-600 dark:hover:bg-dark-700 dark:hover:text-primary-300"
+                  :title="copiedQuickKey === item.copyKey ? t('keys.useKeyModal.copied') : t('keys.useKeyModal.copy')"
+                >
+                  <Icon
+                    :name="copiedQuickKey === item.copyKey ? 'check' : 'clipboard'"
+                    size="sm"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-lg border border-primary-100 bg-primary-50/70 px-3 py-3 dark:border-primary-900/60 dark:bg-primary-900/10">
+            <p class="text-sm font-medium text-primary-800 dark:text-primary-200">
+              {{ t('keys.useKeyModal.overview.stepsTitle') }}
+            </p>
+            <div class="mt-2 grid gap-2 text-sm text-primary-700 dark:text-primary-200/80 md:grid-cols-3">
+              <p v-for="step in setupSteps" :key="step" class="flex gap-2">
+                <Icon name="checkCircle" size="sm" class="mt-0.5 flex-shrink-0 text-primary-500" />
+                <span>{{ step }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Client Tabs -->
         <div v-if="clientTabs.length" class="border-b border-gray-200 dark:border-dark-700">
           <nav class="-mb-px flex space-x-6" aria-label="Client">
@@ -110,6 +170,27 @@
           </div>
         </div>
 
+        <!-- Troubleshooting -->
+        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800">
+          <p class="text-sm font-semibold text-gray-900 dark:text-white">
+            {{ t('keys.useKeyModal.troubleshooting.title') }}
+          </p>
+          <div class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div
+              v-for="hint in troubleshootingHints"
+              :key="hint.code"
+              class="rounded-lg bg-gray-50 px-3 py-2 dark:bg-dark-900/50"
+            >
+              <p class="text-xs font-semibold text-gray-900 dark:text-white">
+                {{ hint.code }}
+              </p>
+              <p class="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-400">
+                {{ hint.text }}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Usage Note -->
         <div v-if="showPlatformNote" class="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
           <Icon name="infoCircle" size="md" class="text-blue-500 flex-shrink-0 mt-0.5" />
@@ -139,7 +220,7 @@ import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useClipboard } from '@/composables/useClipboard'
-import type { GroupPlatform } from '@/types'
+import type { ApiKey, GroupPlatform } from '@/types'
 
 interface Props {
   show: boolean
@@ -147,6 +228,7 @@ interface Props {
   baseUrl: string
   platform: GroupPlatform | null
   allowMessagesDispatch?: boolean
+  keyInfo?: ApiKey | null
 }
 
 interface Emits {
@@ -166,6 +248,13 @@ interface FileConfig {
   highlighted?: string
 }
 
+interface ConnectionField {
+  label: string
+  display: string
+  copyValue: string
+  copyKey: string
+}
+
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
@@ -173,14 +262,93 @@ const { t } = useI18n()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
 const copiedIndex = ref<number | null>(null)
+const copiedQuickKey = ref<string | null>(null)
 const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
+
+const rawBaseUrl = computed(() => {
+  const fallback = typeof window !== 'undefined' ? window.location.origin : ''
+  return (props.baseUrl || fallback).trim().replace(/\/+$/, '')
+})
+
+const baseRoot = computed(() => rawBaseUrl.value.replace(/\/v1(?:beta)?\/?$/, '').replace(/\/+$/, ''))
+
+const ensureV1 = (value: string) => {
+  const trimmed = value.replace(/\/+$/, '')
+  return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`
+}
+
+const ensureV1Beta = (value: string) => {
+  const trimmed = value.replace(/\/+$/, '')
+  return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
+}
+
+const apiBaseUrl = computed(() => ensureV1(baseRoot.value))
+const geminiBaseUrl = computed(() => ensureV1Beta(baseRoot.value))
+const antigravityBaseUrl = computed(() => ensureV1(`${baseRoot.value}/antigravity`))
+const antigravityGeminiBaseUrl = computed(() => ensureV1Beta(`${baseRoot.value}/antigravity`))
+
+const keyDisplayName = computed(() => props.keyInfo?.name?.trim() || t('keys.useKey'))
+
+const platformLabel = computed(() => {
+  switch (props.platform) {
+    case 'openai':
+      return 'OpenAI'
+    case 'gemini':
+      return 'Gemini'
+    case 'antigravity':
+      return 'Antigravity'
+    case 'anthropic':
+      return 'Claude'
+    default:
+      return 'API'
+  }
+})
+
+const suggestedModel = computed(() => {
+  switch (props.platform) {
+    case 'openai':
+      return 'gpt-5.4'
+    case 'gemini':
+      return 'gemini-2.0-flash'
+    case 'antigravity':
+      return activeClientTab.value === 'gemini' || activeClientTab.value === 'opencode'
+        ? 'gemini-2.5-flash'
+        : 'claude-sonnet-4-5'
+    default:
+      return 'claude-sonnet-4-5'
+  }
+})
+
+const clientBaseUrl = computed(() => {
+  if (activeClientTab.value === 'openai-sdk' || activeClientTab.value === 'cherry-studio' || activeClientTab.value === 'chatbox') {
+    return apiBaseUrl.value
+  }
+  if (activeClientTab.value === 'curl') {
+    if (props.platform === 'openai') return apiBaseUrl.value
+    if (props.platform === 'gemini') return geminiBaseUrl.value
+    if (props.platform === 'antigravity') return antigravityBaseUrl.value
+    return rawBaseUrl.value
+  }
+  if (activeClientTab.value === 'opencode') {
+    if (props.platform === 'gemini') return geminiBaseUrl.value
+    if (props.platform === 'antigravity') return antigravityBaseUrl.value
+    return apiBaseUrl.value
+  }
+  return rawBaseUrl.value
+})
+
+const maskApiKey = (value: string) => {
+  if (!value) return ''
+  if (value.length <= 14) return value
+  return `${value.slice(0, 7)}...${value.slice(-4)}`
+}
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
   switch (props.platform) {
     case 'openai':
-      return 'codex'
+      return 'openai-sdk'
     case 'gemini':
       return 'gemini'
     case 'antigravity':
@@ -268,6 +436,10 @@ const clientTabs = computed((): TabConfig[] => {
   switch (props.platform) {
     case 'openai': {
       const tabs: TabConfig[] = [
+        { id: 'openai-sdk', label: t('keys.useKeyModal.clientTabs.openaiSdk'), icon: TerminalIcon },
+        { id: 'cherry-studio', label: t('keys.useKeyModal.clientTabs.cherryStudio'), icon: TerminalIcon },
+        { id: 'chatbox', label: t('keys.useKeyModal.clientTabs.chatbox'), icon: TerminalIcon },
+        { id: 'curl', label: t('keys.useKeyModal.clientTabs.curl'), icon: TerminalIcon },
         { id: 'codex', label: t('keys.useKeyModal.cliTabs.codexCli'), icon: TerminalIcon },
         { id: 'codex-ws', label: t('keys.useKeyModal.cliTabs.codexCliWs'), icon: TerminalIcon },
       ]
@@ -280,17 +452,20 @@ const clientTabs = computed((): TabConfig[] => {
     case 'gemini':
       return [
         { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon },
+        { id: 'curl', label: t('keys.useKeyModal.clientTabs.curl'), icon: TerminalIcon },
         { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
       ]
     case 'antigravity':
       return [
         { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
         { id: 'gemini', label: t('keys.useKeyModal.cliTabs.geminiCli'), icon: SparkleIcon },
+        { id: 'curl', label: t('keys.useKeyModal.clientTabs.curl'), icon: TerminalIcon },
         { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
       ]
     default:
       return [
         { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
+        { id: 'curl', label: t('keys.useKeyModal.clientTabs.curl'), icon: TerminalIcon },
         { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
       ]
   }
@@ -309,7 +484,7 @@ const openaiTabs: TabConfig[] = [
   { id: 'windows', label: 'Windows', icon: WindowsIcon }
 ]
 
-const showShellTabs = computed(() => activeClientTab.value !== 'opencode')
+const showShellTabs = computed(() => !['opencode', 'openai-sdk', 'cherry-studio', 'chatbox', 'curl'].includes(activeClientTab.value))
 
 const currentTabs = computed(() => {
   if (!showShellTabs.value) return []
@@ -319,11 +494,52 @@ const currentTabs = computed(() => {
   return shellTabs
 })
 
+const activeClientLabel = computed(() => {
+  return clientTabs.value.find((tab) => tab.id === activeClientTab.value)?.label || platformLabel.value
+})
+
+const connectionFields = computed((): ConnectionField[] => [
+  {
+    label: t('keys.useKeyModal.overview.baseUrl'),
+    display: clientBaseUrl.value,
+    copyValue: clientBaseUrl.value,
+    copyKey: 'base-url'
+  },
+  {
+    label: t('keys.useKeyModal.overview.apiKey'),
+    display: maskApiKey(props.apiKey),
+    copyValue: props.apiKey,
+    copyKey: 'api-key'
+  },
+  {
+    label: t('keys.useKeyModal.overview.model'),
+    display: suggestedModel.value,
+    copyValue: suggestedModel.value,
+    copyKey: 'model'
+  }
+])
+
+const setupSteps = computed(() => [
+  t('keys.useKeyModal.overview.stepCopy', { client: activeClientLabel.value }),
+  t('keys.useKeyModal.overview.stepModel', { model: suggestedModel.value }),
+  t('keys.useKeyModal.overview.stepTest')
+])
+
+const troubleshootingHints = computed(() => [
+  { code: '401', text: t('keys.useKeyModal.troubleshooting.unauthorized') },
+  { code: '404', text: t('keys.useKeyModal.troubleshooting.notFound') },
+  { code: '402', text: t('keys.useKeyModal.troubleshooting.noBalance') },
+  { code: 'MODEL', text: t('keys.useKeyModal.troubleshooting.model') }
+])
+
 const platformDescription = computed(() => {
   switch (props.platform) {
     case 'openai':
       if (activeClientTab.value === 'claude') {
         return t('keys.useKeyModal.description')
+      }
+      if (['openai-sdk', 'cherry-studio', 'chatbox', 'curl'].includes(activeClientTab.value)) {
+        return t('keys.useKeyModal.openai.compatibleDescription')
       }
       return t('keys.useKeyModal.openai.description')
     case 'gemini':
@@ -376,23 +592,24 @@ const comment = (value: string) => wrapToken('text-slate-500', value)
 // Syntax highlighting helpers
 // Generate file configs based on platform and active tab
 const currentFiles = computed((): FileConfig[] => {
-  const baseUrl = props.baseUrl || window.location.origin
+  const baseUrl = rawBaseUrl.value
   const apiKey = props.apiKey
-  const baseRoot = baseUrl.replace(/\/v1\/?$/, '').replace(/\/+$/, '')
-  const ensureV1 = (value: string) => {
-    const trimmed = value.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`
+  const apiBase = apiBaseUrl.value
+  const antigravityBase = antigravityBaseUrl.value
+  const antigravityGeminiBase = antigravityGeminiBaseUrl.value
+  const geminiBase = geminiBaseUrl.value
+
+  if (activeClientTab.value === 'openai-sdk') {
+    return [generateOpenAISdkExample(apiBase, apiKey)]
   }
-  const apiBase = ensureV1(baseRoot)
-  const antigravityBase = ensureV1(`${baseRoot}/antigravity`)
-  const antigravityGeminiBase = (() => {
-    const trimmed = `${baseRoot}/antigravity`.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
-  })()
-  const geminiBase = (() => {
-    const trimmed = baseRoot.replace(/\/+$/, '')
-    return trimmed.endsWith('/v1beta') ? trimmed : `${trimmed}/v1beta`
-  })()
+
+  if (activeClientTab.value === 'cherry-studio' || activeClientTab.value === 'chatbox') {
+    return [generateOpenAICompatibleClientSettings(activeClientLabel.value, apiBase, apiKey)]
+  }
+
+  if (activeClientTab.value === 'curl') {
+    return [generateCurlExample(props.platform, baseUrl, apiBase, geminiBase, antigravityBase, apiKey)]
+  }
 
   if (activeClientTab.value === 'opencode') {
     switch (props.platform) {
@@ -432,6 +649,107 @@ const currentFiles = computed((): FileConfig[] => {
       return generateAnthropicFiles(baseUrl, apiKey)
   }
 })
+
+function generateOpenAISdkExample(baseUrl: string, apiKey: string): FileConfig {
+  const model = 'gpt-5.4'
+  const content = `import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "${apiKey}",
+  baseURL: "${baseUrl}"
+});
+
+const response = await client.chat.completions.create({
+  model: "${model}",
+  messages: [{ role: "user", content: "ping" }]
+});
+
+console.log(response.choices[0]?.message?.content);`
+
+  return {
+    path: t('keys.useKeyModal.openaiSdk.path'),
+    content,
+    hint: t('keys.useKeyModal.openaiSdk.hint')
+  }
+}
+
+function generateOpenAICompatibleClientSettings(clientName: string, baseUrl: string, apiKey: string): FileConfig {
+  const content = `${t('keys.useKeyModal.clientSettings.client')}: ${clientName}
+${t('keys.useKeyModal.clientSettings.provider')}: ${t('keys.useKeyModal.clientSettings.providerOpenAI')}
+${t('keys.useKeyModal.clientSettings.apiHost')}: ${baseUrl}
+${t('keys.useKeyModal.clientSettings.apiKey')}: ${apiKey}
+${t('keys.useKeyModal.clientSettings.model')}: gpt-5.4
+${t('keys.useKeyModal.clientSettings.testMessage')}: ping`
+
+  return {
+    path: t('keys.useKeyModal.clientSettings.path'),
+    content,
+    hint: t('keys.useKeyModal.clientSettings.hint')
+  }
+}
+
+function generateCurlExample(
+  platform: GroupPlatform | null,
+  baseUrl: string,
+  apiBase: string,
+  geminiBase: string,
+  antigravityBase: string,
+  apiKey: string
+): FileConfig {
+  let endpoint = `${ensureV1(baseUrl)}/messages`
+  let content = ''
+
+  switch (platform) {
+    case 'openai':
+      endpoint = `${apiBase}/chat/completions`
+      content = `curl "${endpoint}" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{ "role": "user", "content": "ping" }]
+  }'`
+      break
+    case 'gemini':
+      endpoint = `${geminiBase}/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+      content = `curl "${endpoint}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "contents": [
+      { "parts": [{ "text": "ping" }] }
+    ]
+  }'`
+      break
+    case 'antigravity':
+      endpoint = `${antigravityBase}/messages`
+      content = `curl "${endpoint}" \\
+  -H "x-api-key: ${apiKey}" \\
+  -H "anthropic-version: 2023-06-01" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 128,
+    "messages": [{ "role": "user", "content": "ping" }]
+  }'`
+      break
+    default:
+      content = `curl "${endpoint}" \\
+  -H "x-api-key: ${apiKey}" \\
+  -H "anthropic-version: 2023-06-01" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 128,
+    "messages": [{ "role": "user", "content": "ping" }]
+  }'`
+  }
+
+  return {
+    path: t('keys.useKeyModal.curl.path'),
+    content,
+    hint: t('keys.useKeyModal.curl.hint')
+  }
+}
 
 function generateAnthropicFiles(baseUrl: string, apiKey: string): FileConfig[] {
   let path: string
@@ -1031,6 +1349,16 @@ const copyContent = async (content: string, index: number) => {
     copiedIndex.value = index
     setTimeout(() => {
       copiedIndex.value = null
+    }, 2000)
+  }
+}
+
+const copyQuickValue = async (content: string, key: string) => {
+  const success = await clipboardCopy(content, t('keys.copied'))
+  if (success) {
+    copiedQuickKey.value = key
+    setTimeout(() => {
+      copiedQuickKey.value = null
     }, 2000)
   }
 }

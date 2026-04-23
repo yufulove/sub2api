@@ -700,11 +700,55 @@ export default {
       note: 'These environment variables will be active in the current terminal session. For permanent configuration, add them to ~/.bashrc, ~/.zshrc, or the appropriate configuration file.',
       noGroupTitle: 'Please assign a group first',
       noGroupDescription: 'This API key has not been assigned to a group. Please click the group column in the key list to assign one before viewing the configuration.',
+      overview: {
+        label: 'Connection info',
+        description: 'Copy these key fields first, then use the client-specific example below to finish setup.',
+        baseUrl: 'Base URL',
+        apiKey: 'API Key',
+        model: 'Suggested model',
+        stepsTitle: 'Connection flow',
+        stepCopy: 'Enter the Base URL and API Key in {client}.',
+        stepModel: 'Start with {model}, then change it after the first successful request.',
+        stepTest: 'Send one test request, then return to the dashboard to check usage.'
+      },
       openai: {
         description: 'Add the following configuration files to your Codex CLI config directory.',
+        compatibleDescription: 'Use this for OpenAI-compatible clients. Copy the Base URL, API Key, and model name, then send a test request.',
         configTomlHint: 'Make sure the following content is at the beginning of the config.toml file',
         note: 'Make sure the config directory exists. macOS/Linux users can run mkdir -p ~/.codex to create it.',
         noteWindows: 'Press Win+R and enter %userprofile%\\.codex to open the config directory. Create it manually if it does not exist.',
+      },
+      clientTabs: {
+        openaiSdk: 'OpenAI SDK',
+        cherryStudio: 'Cherry Studio',
+        chatbox: 'Chatbox',
+        curl: 'curl'
+      },
+      openaiSdk: {
+        path: 'Node.js / OpenAI SDK',
+        hint: 'Install the openai package before running this example. If your client rejects the model, use a model supported by the selected group.'
+      },
+      clientSettings: {
+        path: 'Client settings',
+        client: 'Client',
+        provider: 'Provider type',
+        providerOpenAI: 'OpenAI Compatible',
+        apiHost: 'API host',
+        apiKey: 'API Key',
+        model: 'Model',
+        testMessage: 'Test message',
+        hint: 'Create a new OpenAI-compatible provider in the client, fill these fields, and save.'
+      },
+      curl: {
+        path: 'Test request',
+        hint: 'Run this in a terminal. After a successful response, usage will start showing on the dashboard.'
+      },
+      troubleshooting: {
+        title: 'Common error checks',
+        unauthorized: 'The key is wrong, disabled, or missing characters after copy.',
+        notFound: 'The Base URL or API path is wrong. Check whether the client needs /v1 or /v1beta.',
+        noBalance: 'Account balance, subscription quota, or key quota is not enough.',
+        model: 'The model is not available in this group. Use a model supported by the group.'
       },
       cliTabs: {
         claudeCode: 'Claude Code',

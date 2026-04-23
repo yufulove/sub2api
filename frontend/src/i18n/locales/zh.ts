@@ -699,12 +699,56 @@ export default {
       noGroupTitle: '请先分配分组',
       noGroupDescription:
         '此 API 密钥尚未分配分组，请先在密钥列表中点击分组列进行分配，然后才能查看使用配置。',
+      overview: {
+        label: '接入信息',
+        description: '先复制这里的关键信息，再按下面的客户端示例完成配置。',
+        baseUrl: 'Base URL',
+        apiKey: 'API Key',
+        model: '推荐模型',
+        stepsTitle: '接入流程',
+        stepCopy: '在 {client} 中填入 Base URL 和 API Key。',
+        stepModel: '模型先填 {model}，跑通后再按需更换。',
+        stepTest: '发送一次测试请求，然后回到仪表盘检查用量。'
+      },
       openai: {
         description: '将以下配置文件添加到 Codex CLI 配置目录中。',
+        compatibleDescription: '适用于 OpenAI 兼容客户端。复制 Base URL、API Key 和模型名后即可发送测试请求。',
         configTomlHint: '请确保以下内容位于 config.toml 文件的开头部分',
         note: '请确保配置目录存在。macOS/Linux 用户可运行 mkdir -p ~/.codex 创建目录。',
         noteWindows:
           '按 Win+R，输入 %userprofile%\\.codex 打开配置目录。如目录不存在，请先手动创建。'
+      },
+      clientTabs: {
+        openaiSdk: 'OpenAI SDK',
+        cherryStudio: 'Cherry Studio',
+        chatbox: 'Chatbox',
+        curl: 'curl'
+      },
+      openaiSdk: {
+        path: 'Node.js / OpenAI SDK',
+        hint: '安装 openai 包后运行此示例；如果客户端不支持该模型，请换成分组支持的模型名。'
+      },
+      clientSettings: {
+        path: '客户端设置',
+        client: '客户端',
+        provider: '服务商类型',
+        providerOpenAI: 'OpenAI Compatible',
+        apiHost: 'API 地址',
+        apiKey: 'API Key',
+        model: '模型',
+        testMessage: '测试消息',
+        hint: '在客户端中新建 OpenAI 兼容服务商，填入这些字段并保存。'
+      },
+      curl: {
+        path: '测试请求',
+        hint: '复制后在终端执行。成功返回内容后，仪表盘用量会开始更新。'
+      },
+      troubleshooting: {
+        title: '常见错误速查',
+        unauthorized: '密钥错误、被禁用，或复制时少了字符。',
+        notFound: 'Base URL 或接口路径不对，先确认是否需要 /v1 或 /v1beta。',
+        noBalance: '账户余额、订阅额度或密钥额度不足。',
+        model: '模型名不在当前分组支持范围内，换成分组可用模型。'
       },
       cliTabs: {
         claudeCode: 'Claude Code',
