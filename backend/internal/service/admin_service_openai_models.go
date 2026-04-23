@@ -214,7 +214,7 @@ func collectOpenAIAvailableModels(node any, seen map[string]openaipkg.Model, ord
 }
 
 func extractOpenAIAvailableModelID(node map[string]any) string {
-	return firstNonEmptyString(
+	return firstNonEmptyModelString(
 		stringValue(node["id"]),
 		stringValue(node["slug"]),
 		stringValue(node["model_slug"]),
@@ -222,7 +222,7 @@ func extractOpenAIAvailableModelID(node map[string]any) string {
 }
 
 func extractOpenAIAvailableModelDisplayName(node map[string]any, fallback string) string {
-	return firstNonEmptyString(
+	return firstNonEmptyModelString(
 		stringValue(node["display_name"]),
 		stringValue(node["title"]),
 		stringValue(node["name"]),
@@ -231,7 +231,7 @@ func extractOpenAIAvailableModelDisplayName(node map[string]any, fallback string
 }
 
 func extractOpenAIAvailableModelOwnedBy(node map[string]any) string {
-	return firstNonEmptyString(
+	return firstNonEmptyModelString(
 		stringValue(node["owned_by"]),
 		stringValue(node["owner"]),
 	)
@@ -263,7 +263,7 @@ func stringValue(value any) string {
 	}
 }
 
-func firstNonEmptyString(values ...string) string {
+func firstNonEmptyModelString(values ...string) string {
 	for _, value := range values {
 		if strings.TrimSpace(value) != "" {
 			return strings.TrimSpace(value)
