@@ -10,6 +10,9 @@ import { useAdminSettingsStore } from '@/stores/adminSettings'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { resolveDocumentTitle } from './title'
+import { getDefaultAuthenticatedRoute, resolvePostAuthRedirect } from '@/utils/authRedirect'
+import { attemptPeerAuthSync } from '@/utils/crossSiteAuth'
+import { isImageSiteMode, isImageSiteRoutePath, resolveImageSiteURL, resolveMainSiteURL } from '@/utils/siteMode'
 
 /**
  * Route definitions with lazy loading
@@ -116,6 +119,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/auth/bridge',
+    name: 'AuthBridge',
+    component: () => import('@/views/auth/AuthBridgeView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Auth Bridge'
+    }
+  },
+  {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('@/views/auth/ForgotPasswordView.vue'),
@@ -147,7 +159,45 @@ const routes: RouteRecordRaw[] = [
   // ==================== User Routes ====================
   {
     path: '/',
-    redirect: '/home'
+    redirect: () => (isImageSiteMode() ? '/studio/generate' : '/home')
+  },
+  {
+    path: '/studio',
+    name: 'StudioHome',
+    component: () => import('@/views/image/StudioLandingView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Image Studio'
+    }
+  },
+  {
+    path: '/studio/generate',
+    name: 'StudioGenerate',
+    component: () => import('@/views/image/StudioGenerateView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Create Images'
+    }
+  },
+  {
+    path: '/studio/history',
+    name: 'StudioHistory',
+    component: () => import('@/views/image/StudioHistoryView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Image History'
+    }
+  },
+  {
+    path: '/studio/pricing',
+    name: 'StudioPricing',
+    component: () => import('@/views/image/StudioPricingView.vue'),
+    meta: {
+      requiresAuth: false,
+      title: 'Image Pricing'
+    }
   },
   {
     path: '/dashboard',
@@ -568,6 +618,72 @@ const routes: RouteRecordRaw[] = [
   }
 ]
 
+const imageSiteRouteNames = new Set<string>([
+  'Login',
+  'Register',
+  'EmailVerify',
+  'OAuthCallback',
+  'LinuxDoOAuthCallback',
+  'WeChatOAuthCallback',
+  'WeChatPaymentOAuthCallback',
+  'OIDCOAuthCallback',
+  'AuthBridge',
+  'ForgotPassword',
+  'ResetPassword',
+  'StudioHome',
+  'StudioGenerate',
+  'StudioHistory',
+  'StudioPricing',
+  'NotFound'
+])
+
+const publicAuthEntryRouteNames = new Set<string>([
+  'Login',
+  'Register'
+])
+const PUBLIC_AUTH_SYNC_TIMEOUT_MS = 600
+
+function isAllowedOnImageSite(routeName: unknown, routePath: string): boolean {
+  if (typeof routeName === 'string' && imageSiteRouteNames.has(routeName)) {
+    return true
+  }
+  return routePath.startsWith('/studio')
+}
+
+function resolveCrossSiteRedirectURL(
+  routeName: unknown,
+  routePath: string,
+  fullPath: string
+): string | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  let targetURL: URL | null = null
+
+  if (isImageSiteMode()) {
+    if (!isAllowedOnImageSite(routeName, routePath)) {
+      targetURL = new URL(resolveMainSiteURL(fullPath || '/'), window.location.origin)
+    }
+  } else if (isImageSiteRoutePath(routePath)) {
+    targetURL = new URL(resolveImageSiteURL(fullPath || '/studio'), window.location.origin)
+  }
+
+  if (!targetURL || targetURL.href === window.location.href) {
+    return null
+  }
+
+  return targetURL.href
+}
+
+function resolveAuthenticatedHomePath(isAdmin: boolean): string {
+  return getDefaultAuthenticatedRoute(isAdmin)
+}
+
+function isPublicAuthEntryRoute(routeName: unknown): boolean {
+  return typeof routeName === 'string' && publicAuthEntryRouteNames.has(routeName)
+}
+
 /**
  * Create router instance
  */
@@ -631,6 +747,12 @@ router.beforeEach((to, _from, next) => {
     authInitialized = true
   }
 
+  const crossSiteRedirectURL = resolveCrossSiteRedirectURL(to.name, to.path, to.fullPath)
+  if (crossSiteRedirectURL) {
+    window.location.replace(crossSiteRedirectURL)
+    return
+  }
+
   // Set page title
   const appStore = useAppStore()
   // For custom pages, use menu item label as document title
@@ -656,16 +778,36 @@ router.beforeEach((to, _from, next) => {
 
   // If route doesn't require auth, allow access
   if (!requiresAuth) {
-    // If already authenticated and trying to access login/register, redirect to appropriate dashboard
-    if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+    const isPublicAuthEntry = isPublicAuthEntryRoute(to.name)
+    const requestedRedirect =
+      typeof to.query.redirect === 'string' ? to.query.redirect : undefined
+
+    // If already authenticated and trying to access login/register, honor an explicit redirect first.
+    if (authStore.isAuthenticated && isPublicAuthEntry) {
       // In backend mode, non-admin users should NOT be redirected away from login
       // (they are blocked from all protected routes, so redirecting would cause a loop)
       if (appStore.backendModeEnabled && !authStore.isAdmin) {
         next()
         return
       }
-      // Admin users go to admin dashboard, regular users go to user dashboard
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      next(resolvePostAuthRedirect(requestedRedirect, authStore.isAdmin))
+      return
+    }
+
+    if (!authStore.isAuthenticated && isPublicAuthEntry) {
+      attemptPeerAuthSync({ timeoutMs: PUBLIC_AUTH_SYNC_TIMEOUT_MS })
+        .then((synced) => {
+          if (!synced) {
+            next()
+            return
+          }
+
+          const syncedAuthStore = useAuthStore()
+          next(resolvePostAuthRedirect(requestedRedirect, syncedAuthStore.isAdmin))
+        })
+        .catch(() => {
+          next()
+        })
       return
     }
     // Backend mode: block public pages for unauthenticated users (except login, key-usage, setup)
@@ -693,7 +835,7 @@ router.beforeEach((to, _from, next) => {
   // Check admin requirement
   if (requiresAdmin && !authStore.isAdmin) {
     // User is authenticated but not admin, redirect to user dashboard
-    next('/dashboard')
+    next(resolveAuthenticatedHomePath(false))
     return
   }
 
@@ -702,7 +844,7 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresPayment) {
     const paymentEnabled = appStore.cachedPublicSettings?.payment_enabled
     if (!paymentEnabled) {
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      next(resolveAuthenticatedHomePath(authStore.isAdmin))
       return
     }
   }
@@ -719,7 +861,7 @@ router.beforeEach((to, _from, next) => {
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
       // 简易模式下访问受限页面,重定向到仪表板
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      next(resolveAuthenticatedHomePath(authStore.isAdmin))
       return
     }
   }

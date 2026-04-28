@@ -494,8 +494,11 @@ type ForwardResult struct {
 	ReasoningEffort  *string
 
 	// 图片生成计费字段（图片生成模型使用）
-	ImageCount int    // 生成的图片数量
-	ImageSize  string // 图片尺寸 "1K", "2K", "4K"
+	ImageCount         int    // 生成的图片数量
+	ImageSize          string // 图片计费尺寸 "1K", "2K", "4K"
+	ImageRequestedSize string // 客户端请求尺寸，例如 "1536x1024"
+	ImagePrompt        string // 用户原始 prompt
+	ImageRevisedPrompt string // 上游返回的 revised prompt
 }
 
 // UpstreamFailoverError indicates an upstream error that should trigger account failover.
@@ -8212,6 +8215,9 @@ func (s *GatewayService) buildRecordUsageLog(
 		FirstTokenMs:          result.FirstTokenMs,
 		ImageCount:            result.ImageCount,
 		ImageSize:             optionalTrimmedStringPtr(result.ImageSize),
+		ImageRequestedSize:    optionalTrimmedStringPtr(result.ImageRequestedSize),
+		ImagePrompt:           optionalTrimmedStringPtr(result.ImagePrompt),
+		ImageRevisedPrompt:    optionalTrimmedStringPtr(result.ImageRevisedPrompt),
 		CacheTTLOverridden:    cacheTTLOverridden,
 		ChannelID:             optionalInt64Ptr(input.ChannelID),
 		ModelMappingChain:     optionalTrimmedStringPtr(input.ModelMappingChain),

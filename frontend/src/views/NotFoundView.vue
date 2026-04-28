@@ -57,10 +57,18 @@
           <Icon name="arrowLeft" size="md" class="mr-2" />
           Go Back
         </button>
-        <router-link to="/dashboard" class="btn btn-primary">
+        <router-link :to="primaryHomePath" class="btn btn-primary">
           <Icon name="home" size="md" class="mr-2" />
-          Go to Dashboard
+          {{ primaryActionLabel }}
         </router-link>
+        <a
+          v-if="showMainSiteLink"
+          :href="mainSiteHomeURL"
+          class="btn btn-secondary"
+        >
+          <Icon name="externalLink" size="md" class="mr-2" />
+          {{ mainSiteActionLabel }}
+        </a>
       </div>
 
       <!-- Help Link -->
@@ -78,12 +86,46 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import Icon from '@/components/icons/Icon.vue'
+import { useAuthStore } from '@/stores'
+import {
+  getCurrentSiteHomePath,
+  getMainSiteHomePath,
+  isImageSiteMode,
+  resolveMainSiteURL
+} from '@/utils/siteMode'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
+const imageSiteMode = computed(() => isImageSiteMode())
+const primaryHomePath = computed(() => (
+  getCurrentSiteHomePath({
+    isAuthenticated: authStore.isAuthenticated,
+    isAdmin: authStore.isAdmin
+  })
+))
+const primaryActionLabel = computed(() => {
+  if (imageSiteMode.value) {
+    return authStore.isAuthenticated ? 'Go to Studio' : 'Open Studio'
+  }
+  return authStore.isAuthenticated ? 'Go to Dashboard' : 'Go Home'
+})
+const showMainSiteLink = computed(() => imageSiteMode.value)
+const mainSiteHomeURL = computed(() => (
+  resolveMainSiteURL(
+    getMainSiteHomePath({
+      isAuthenticated: authStore.isAuthenticated,
+      isAdmin: authStore.isAdmin
+    })
+  )
+))
+const mainSiteActionLabel = computed(() => (
+  authStore.isAuthenticated ? 'Open main dashboard' : 'Open main site'
+))
 
 function goBack(): void {
   router.back()

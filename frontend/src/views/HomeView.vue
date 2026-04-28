@@ -154,6 +154,13 @@
                 {{ entryLabel }}
               </router-link>
               <a
+                :href="imageStudioEntryURL"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-300/20 bg-rose-300/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-300/15"
+              >
+                <Icon name="sparkles" size="md" />
+                Image Studio
+              </a>
+              <a
                 v-if="docUrl"
                 :href="docUrl"
                 target="_blank"
@@ -467,6 +474,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { resolveImageSiteURL } from '@/utils/siteMode'
 
 type ModelFilter = 'all' | 'text' | 'code' | 'image' | 'value'
 type CodeTab = 'python' | 'javascript'
@@ -506,6 +514,7 @@ const entryLabel = computed(() => {
   if (isAuthenticated.value) return '创建 / 管理 API Key'
   return registrationEnabled.value ? '立即获取 Key' : '登录获取 Key'
 })
+const imageStudioEntryURL = computed(() => resolveImageSiteURL('/studio/generate'))
 
 
 const normalizedApiRoot = computed(() => {

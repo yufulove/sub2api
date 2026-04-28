@@ -202,6 +202,8 @@ export interface PublicSettings {
   custom_menu_items: CustomMenuItem[]
   custom_endpoints: CustomEndpoint[]
   linuxdo_oauth_enabled: boolean
+  wallet_display_mode?: 'usd' | 'cny' | string
+  payment_balance_recharge_multiplier?: number
   wechat_oauth_enabled: boolean
   wechat_oauth_open_enabled?: boolean
   wechat_oauth_mp_enabled?: boolean
@@ -1126,6 +1128,9 @@ export interface UsageLog {
   // 图片生成字段
   image_count: number
   image_size: string | null
+  image_requested_size?: string | null
+  image_prompt?: string | null
+  image_revised_prompt?: string | null
 
   // User-Agent
   user_agent: string | null

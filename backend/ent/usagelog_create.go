@@ -477,6 +477,48 @@ func (_c *UsageLogCreate) SetNillableImageSize(v *string) *UsageLogCreate {
 	return _c
 }
 
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (_c *UsageLogCreate) SetImageRequestedSize(v string) *UsageLogCreate {
+	_c.mutation.SetImageRequestedSize(v)
+	return _c
+}
+
+// SetNillableImageRequestedSize sets the "image_requested_size" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableImageRequestedSize(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetImageRequestedSize(*v)
+	}
+	return _c
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (_c *UsageLogCreate) SetImagePrompt(v string) *UsageLogCreate {
+	_c.mutation.SetImagePrompt(v)
+	return _c
+}
+
+// SetNillableImagePrompt sets the "image_prompt" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableImagePrompt(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetImagePrompt(*v)
+	}
+	return _c
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (_c *UsageLogCreate) SetImageRevisedPrompt(v string) *UsageLogCreate {
+	_c.mutation.SetImageRevisedPrompt(v)
+	return _c
+}
+
+// SetNillableImageRevisedPrompt sets the "image_revised_prompt" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableImageRevisedPrompt(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetImageRevisedPrompt(*v)
+	}
+	return _c
+}
+
 // SetCacheTTLOverridden sets the "cache_ttl_overridden" field.
 func (_c *UsageLogCreate) SetCacheTTLOverridden(v bool) *UsageLogCreate {
 	_c.mutation.SetCacheTTLOverridden(v)
@@ -754,6 +796,11 @@ func (_c *UsageLogCreate) check() error {
 			return &ValidationError{Name: "image_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_size": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.ImageRequestedSize(); ok {
+		if err := usagelog.ImageRequestedSizeValidator(v); err != nil {
+			return &ValidationError{Name: "image_requested_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_requested_size": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CacheTTLOverridden(); !ok {
 		return &ValidationError{Name: "cache_ttl_overridden", err: errors.New(`ent: missing required field "UsageLog.cache_ttl_overridden"`)}
 	}
@@ -915,6 +962,18 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ImageSize(); ok {
 		_spec.SetField(usagelog.FieldImageSize, field.TypeString, value)
 		_node.ImageSize = &value
+	}
+	if value, ok := _c.mutation.ImageRequestedSize(); ok {
+		_spec.SetField(usagelog.FieldImageRequestedSize, field.TypeString, value)
+		_node.ImageRequestedSize = &value
+	}
+	if value, ok := _c.mutation.ImagePrompt(); ok {
+		_spec.SetField(usagelog.FieldImagePrompt, field.TypeString, value)
+		_node.ImagePrompt = &value
+	}
+	if value, ok := _c.mutation.ImageRevisedPrompt(); ok {
+		_spec.SetField(usagelog.FieldImageRevisedPrompt, field.TypeString, value)
+		_node.ImageRevisedPrompt = &value
 	}
 	if value, ok := _c.mutation.CacheTTLOverridden(); ok {
 		_spec.SetField(usagelog.FieldCacheTTLOverridden, field.TypeBool, value)
@@ -1676,6 +1735,60 @@ func (u *UsageLogUpsert) UpdateImageSize() *UsageLogUpsert {
 // ClearImageSize clears the value of the "image_size" field.
 func (u *UsageLogUpsert) ClearImageSize() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldImageSize)
+	return u
+}
+
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (u *UsageLogUpsert) SetImageRequestedSize(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldImageRequestedSize, v)
+	return u
+}
+
+// UpdateImageRequestedSize sets the "image_requested_size" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateImageRequestedSize() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldImageRequestedSize)
+	return u
+}
+
+// ClearImageRequestedSize clears the value of the "image_requested_size" field.
+func (u *UsageLogUpsert) ClearImageRequestedSize() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldImageRequestedSize)
+	return u
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (u *UsageLogUpsert) SetImagePrompt(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldImagePrompt, v)
+	return u
+}
+
+// UpdateImagePrompt sets the "image_prompt" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateImagePrompt() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldImagePrompt)
+	return u
+}
+
+// ClearImagePrompt clears the value of the "image_prompt" field.
+func (u *UsageLogUpsert) ClearImagePrompt() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldImagePrompt)
+	return u
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (u *UsageLogUpsert) SetImageRevisedPrompt(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldImageRevisedPrompt, v)
+	return u
+}
+
+// UpdateImageRevisedPrompt sets the "image_revised_prompt" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateImageRevisedPrompt() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldImageRevisedPrompt)
+	return u
+}
+
+// ClearImageRevisedPrompt clears the value of the "image_revised_prompt" field.
+func (u *UsageLogUpsert) ClearImageRevisedPrompt() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldImageRevisedPrompt)
 	return u
 }
 
@@ -2454,6 +2567,69 @@ func (u *UsageLogUpsertOne) UpdateImageSize() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearImageSize() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearImageSize()
+	})
+}
+
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (u *UsageLogUpsertOne) SetImageRequestedSize(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetImageRequestedSize(v)
+	})
+}
+
+// UpdateImageRequestedSize sets the "image_requested_size" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateImageRequestedSize() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateImageRequestedSize()
+	})
+}
+
+// ClearImageRequestedSize clears the value of the "image_requested_size" field.
+func (u *UsageLogUpsertOne) ClearImageRequestedSize() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearImageRequestedSize()
+	})
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (u *UsageLogUpsertOne) SetImagePrompt(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetImagePrompt(v)
+	})
+}
+
+// UpdateImagePrompt sets the "image_prompt" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateImagePrompt() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateImagePrompt()
+	})
+}
+
+// ClearImagePrompt clears the value of the "image_prompt" field.
+func (u *UsageLogUpsertOne) ClearImagePrompt() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearImagePrompt()
+	})
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (u *UsageLogUpsertOne) SetImageRevisedPrompt(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetImageRevisedPrompt(v)
+	})
+}
+
+// UpdateImageRevisedPrompt sets the "image_revised_prompt" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateImageRevisedPrompt() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateImageRevisedPrompt()
+	})
+}
+
+// ClearImageRevisedPrompt clears the value of the "image_revised_prompt" field.
+func (u *UsageLogUpsertOne) ClearImageRevisedPrompt() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearImageRevisedPrompt()
 	})
 }
 
@@ -3400,6 +3576,69 @@ func (u *UsageLogUpsertBulk) UpdateImageSize() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearImageSize() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearImageSize()
+	})
+}
+
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (u *UsageLogUpsertBulk) SetImageRequestedSize(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetImageRequestedSize(v)
+	})
+}
+
+// UpdateImageRequestedSize sets the "image_requested_size" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateImageRequestedSize() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateImageRequestedSize()
+	})
+}
+
+// ClearImageRequestedSize clears the value of the "image_requested_size" field.
+func (u *UsageLogUpsertBulk) ClearImageRequestedSize() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearImageRequestedSize()
+	})
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (u *UsageLogUpsertBulk) SetImagePrompt(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetImagePrompt(v)
+	})
+}
+
+// UpdateImagePrompt sets the "image_prompt" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateImagePrompt() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateImagePrompt()
+	})
+}
+
+// ClearImagePrompt clears the value of the "image_prompt" field.
+func (u *UsageLogUpsertBulk) ClearImagePrompt() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearImagePrompt()
+	})
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (u *UsageLogUpsertBulk) SetImageRevisedPrompt(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetImageRevisedPrompt(v)
+	})
+}
+
+// UpdateImageRevisedPrompt sets the "image_revised_prompt" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateImageRevisedPrompt() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateImageRevisedPrompt()
+	})
+}
+
+// ClearImageRevisedPrompt clears the value of the "image_revised_prompt" field.
+func (u *UsageLogUpsertBulk) ClearImageRevisedPrompt() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearImageRevisedPrompt()
 	})
 }
 

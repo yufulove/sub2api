@@ -6,6 +6,7 @@
 export { useAuthStore } from './auth'
 export { useAppStore } from './app'
 export { useAdminSettingsStore } from './adminSettings'
+export { useImageStudioStore } from './imageStudio'
 export { useSubscriptionStore } from './subscriptions'
 export { useOnboardingStore } from './onboarding'
 export { useAnnouncementStore } from './announcements'

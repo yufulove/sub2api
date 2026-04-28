@@ -164,6 +164,10 @@ func (h *GatewayHandler) GeminiV1BetaModels(c *gin.Context) {
 		googleError(c, http.StatusNotFound, err.Error())
 		return
 	}
+	if service.IsImageGenerationModel(modelName) {
+		googleError(c, http.StatusBadRequest, service.DedicatedImageGenerationEndpointMessage())
+		return
+	}
 
 	stream := action == "streamGenerateContent"
 	reqLog = reqLog.With(zap.String("model", modelName), zap.String("action", action), zap.Bool("stream", stream))

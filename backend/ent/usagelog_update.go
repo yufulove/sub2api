@@ -739,6 +739,66 @@ func (_u *UsageLogUpdate) ClearImageSize() *UsageLogUpdate {
 	return _u
 }
 
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (_u *UsageLogUpdate) SetImageRequestedSize(v string) *UsageLogUpdate {
+	_u.mutation.SetImageRequestedSize(v)
+	return _u
+}
+
+// SetNillableImageRequestedSize sets the "image_requested_size" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableImageRequestedSize(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetImageRequestedSize(*v)
+	}
+	return _u
+}
+
+// ClearImageRequestedSize clears the value of the "image_requested_size" field.
+func (_u *UsageLogUpdate) ClearImageRequestedSize() *UsageLogUpdate {
+	_u.mutation.ClearImageRequestedSize()
+	return _u
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (_u *UsageLogUpdate) SetImagePrompt(v string) *UsageLogUpdate {
+	_u.mutation.SetImagePrompt(v)
+	return _u
+}
+
+// SetNillableImagePrompt sets the "image_prompt" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableImagePrompt(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetImagePrompt(*v)
+	}
+	return _u
+}
+
+// ClearImagePrompt clears the value of the "image_prompt" field.
+func (_u *UsageLogUpdate) ClearImagePrompt() *UsageLogUpdate {
+	_u.mutation.ClearImagePrompt()
+	return _u
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (_u *UsageLogUpdate) SetImageRevisedPrompt(v string) *UsageLogUpdate {
+	_u.mutation.SetImageRevisedPrompt(v)
+	return _u
+}
+
+// SetNillableImageRevisedPrompt sets the "image_revised_prompt" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableImageRevisedPrompt(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetImageRevisedPrompt(*v)
+	}
+	return _u
+}
+
+// ClearImageRevisedPrompt clears the value of the "image_revised_prompt" field.
+func (_u *UsageLogUpdate) ClearImageRevisedPrompt() *UsageLogUpdate {
+	_u.mutation.ClearImageRevisedPrompt()
+	return _u
+}
+
 // SetCacheTTLOverridden sets the "cache_ttl_overridden" field.
 func (_u *UsageLogUpdate) SetCacheTTLOverridden(v bool) *UsageLogUpdate {
 	_u.mutation.SetCacheTTLOverridden(v)
@@ -890,6 +950,11 @@ func (_u *UsageLogUpdate) check() error {
 	if v, ok := _u.mutation.ImageSize(); ok {
 		if err := usagelog.ImageSizeValidator(v); err != nil {
 			return &ValidationError{Name: "image_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_size": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ImageRequestedSize(); ok {
+		if err := usagelog.ImageRequestedSizeValidator(v); err != nil {
+			return &ValidationError{Name: "image_requested_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_requested_size": %w`, err)}
 		}
 	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -1098,6 +1163,24 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ImageSizeCleared() {
 		_spec.ClearField(usagelog.FieldImageSize, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageRequestedSize(); ok {
+		_spec.SetField(usagelog.FieldImageRequestedSize, field.TypeString, value)
+	}
+	if _u.mutation.ImageRequestedSizeCleared() {
+		_spec.ClearField(usagelog.FieldImageRequestedSize, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImagePrompt(); ok {
+		_spec.SetField(usagelog.FieldImagePrompt, field.TypeString, value)
+	}
+	if _u.mutation.ImagePromptCleared() {
+		_spec.ClearField(usagelog.FieldImagePrompt, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageRevisedPrompt(); ok {
+		_spec.SetField(usagelog.FieldImageRevisedPrompt, field.TypeString, value)
+	}
+	if _u.mutation.ImageRevisedPromptCleared() {
+		_spec.ClearField(usagelog.FieldImageRevisedPrompt, field.TypeString)
 	}
 	if value, ok := _u.mutation.CacheTTLOverridden(); ok {
 		_spec.SetField(usagelog.FieldCacheTTLOverridden, field.TypeBool, value)
@@ -1974,6 +2057,66 @@ func (_u *UsageLogUpdateOne) ClearImageSize() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (_u *UsageLogUpdateOne) SetImageRequestedSize(v string) *UsageLogUpdateOne {
+	_u.mutation.SetImageRequestedSize(v)
+	return _u
+}
+
+// SetNillableImageRequestedSize sets the "image_requested_size" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableImageRequestedSize(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetImageRequestedSize(*v)
+	}
+	return _u
+}
+
+// ClearImageRequestedSize clears the value of the "image_requested_size" field.
+func (_u *UsageLogUpdateOne) ClearImageRequestedSize() *UsageLogUpdateOne {
+	_u.mutation.ClearImageRequestedSize()
+	return _u
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (_u *UsageLogUpdateOne) SetImagePrompt(v string) *UsageLogUpdateOne {
+	_u.mutation.SetImagePrompt(v)
+	return _u
+}
+
+// SetNillableImagePrompt sets the "image_prompt" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableImagePrompt(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetImagePrompt(*v)
+	}
+	return _u
+}
+
+// ClearImagePrompt clears the value of the "image_prompt" field.
+func (_u *UsageLogUpdateOne) ClearImagePrompt() *UsageLogUpdateOne {
+	_u.mutation.ClearImagePrompt()
+	return _u
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (_u *UsageLogUpdateOne) SetImageRevisedPrompt(v string) *UsageLogUpdateOne {
+	_u.mutation.SetImageRevisedPrompt(v)
+	return _u
+}
+
+// SetNillableImageRevisedPrompt sets the "image_revised_prompt" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableImageRevisedPrompt(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetImageRevisedPrompt(*v)
+	}
+	return _u
+}
+
+// ClearImageRevisedPrompt clears the value of the "image_revised_prompt" field.
+func (_u *UsageLogUpdateOne) ClearImageRevisedPrompt() *UsageLogUpdateOne {
+	_u.mutation.ClearImageRevisedPrompt()
+	return _u
+}
+
 // SetCacheTTLOverridden sets the "cache_ttl_overridden" field.
 func (_u *UsageLogUpdateOne) SetCacheTTLOverridden(v bool) *UsageLogUpdateOne {
 	_u.mutation.SetCacheTTLOverridden(v)
@@ -2138,6 +2281,11 @@ func (_u *UsageLogUpdateOne) check() error {
 	if v, ok := _u.mutation.ImageSize(); ok {
 		if err := usagelog.ImageSizeValidator(v); err != nil {
 			return &ValidationError{Name: "image_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_size": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ImageRequestedSize(); ok {
+		if err := usagelog.ImageRequestedSizeValidator(v); err != nil {
+			return &ValidationError{Name: "image_requested_size", err: fmt.Errorf(`ent: validator failed for field "UsageLog.image_requested_size": %w`, err)}
 		}
 	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -2363,6 +2511,24 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.ImageSizeCleared() {
 		_spec.ClearField(usagelog.FieldImageSize, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageRequestedSize(); ok {
+		_spec.SetField(usagelog.FieldImageRequestedSize, field.TypeString, value)
+	}
+	if _u.mutation.ImageRequestedSizeCleared() {
+		_spec.ClearField(usagelog.FieldImageRequestedSize, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImagePrompt(); ok {
+		_spec.SetField(usagelog.FieldImagePrompt, field.TypeString, value)
+	}
+	if _u.mutation.ImagePromptCleared() {
+		_spec.ClearField(usagelog.FieldImagePrompt, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageRevisedPrompt(); ok {
+		_spec.SetField(usagelog.FieldImageRevisedPrompt, field.TypeString, value)
+	}
+	if _u.mutation.ImageRevisedPromptCleared() {
+		_spec.ClearField(usagelog.FieldImageRevisedPrompt, field.TypeString)
 	}
 	if value, ok := _u.mutation.CacheTTLOverridden(); ok {
 		_spec.SetField(usagelog.FieldCacheTTLOverridden, field.TypeBool, value)

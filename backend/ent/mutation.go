@@ -34065,6 +34065,9 @@ type UsageLogMutation struct {
 	image_count                 *int
 	addimage_count              *int
 	image_size                  *string
+	image_requested_size        *string
+	image_prompt                *string
+	image_revised_prompt        *string
 	cache_ttl_overridden        *bool
 	created_at                  *time.Time
 	clearedFields               map[string]struct{}
@@ -36007,6 +36010,153 @@ func (m *UsageLogMutation) ResetImageSize() {
 	delete(m.clearedFields, usagelog.FieldImageSize)
 }
 
+// SetImageRequestedSize sets the "image_requested_size" field.
+func (m *UsageLogMutation) SetImageRequestedSize(s string) {
+	m.image_requested_size = &s
+}
+
+// ImageRequestedSize returns the value of the "image_requested_size" field in the mutation.
+func (m *UsageLogMutation) ImageRequestedSize() (r string, exists bool) {
+	v := m.image_requested_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageRequestedSize returns the old "image_requested_size" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldImageRequestedSize(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageRequestedSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageRequestedSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageRequestedSize: %w", err)
+	}
+	return oldValue.ImageRequestedSize, nil
+}
+
+// ClearImageRequestedSize clears the value of the "image_requested_size" field.
+func (m *UsageLogMutation) ClearImageRequestedSize() {
+	m.image_requested_size = nil
+	m.clearedFields[usagelog.FieldImageRequestedSize] = struct{}{}
+}
+
+// ImageRequestedSizeCleared returns if the "image_requested_size" field was cleared in this mutation.
+func (m *UsageLogMutation) ImageRequestedSizeCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldImageRequestedSize]
+	return ok
+}
+
+// ResetImageRequestedSize resets all changes to the "image_requested_size" field.
+func (m *UsageLogMutation) ResetImageRequestedSize() {
+	m.image_requested_size = nil
+	delete(m.clearedFields, usagelog.FieldImageRequestedSize)
+}
+
+// SetImagePrompt sets the "image_prompt" field.
+func (m *UsageLogMutation) SetImagePrompt(s string) {
+	m.image_prompt = &s
+}
+
+// ImagePrompt returns the value of the "image_prompt" field in the mutation.
+func (m *UsageLogMutation) ImagePrompt() (r string, exists bool) {
+	v := m.image_prompt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImagePrompt returns the old "image_prompt" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldImagePrompt(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImagePrompt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImagePrompt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImagePrompt: %w", err)
+	}
+	return oldValue.ImagePrompt, nil
+}
+
+// ClearImagePrompt clears the value of the "image_prompt" field.
+func (m *UsageLogMutation) ClearImagePrompt() {
+	m.image_prompt = nil
+	m.clearedFields[usagelog.FieldImagePrompt] = struct{}{}
+}
+
+// ImagePromptCleared returns if the "image_prompt" field was cleared in this mutation.
+func (m *UsageLogMutation) ImagePromptCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldImagePrompt]
+	return ok
+}
+
+// ResetImagePrompt resets all changes to the "image_prompt" field.
+func (m *UsageLogMutation) ResetImagePrompt() {
+	m.image_prompt = nil
+	delete(m.clearedFields, usagelog.FieldImagePrompt)
+}
+
+// SetImageRevisedPrompt sets the "image_revised_prompt" field.
+func (m *UsageLogMutation) SetImageRevisedPrompt(s string) {
+	m.image_revised_prompt = &s
+}
+
+// ImageRevisedPrompt returns the value of the "image_revised_prompt" field in the mutation.
+func (m *UsageLogMutation) ImageRevisedPrompt() (r string, exists bool) {
+	v := m.image_revised_prompt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageRevisedPrompt returns the old "image_revised_prompt" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldImageRevisedPrompt(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageRevisedPrompt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageRevisedPrompt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageRevisedPrompt: %w", err)
+	}
+	return oldValue.ImageRevisedPrompt, nil
+}
+
+// ClearImageRevisedPrompt clears the value of the "image_revised_prompt" field.
+func (m *UsageLogMutation) ClearImageRevisedPrompt() {
+	m.image_revised_prompt = nil
+	m.clearedFields[usagelog.FieldImageRevisedPrompt] = struct{}{}
+}
+
+// ImageRevisedPromptCleared returns if the "image_revised_prompt" field was cleared in this mutation.
+func (m *UsageLogMutation) ImageRevisedPromptCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldImageRevisedPrompt]
+	return ok
+}
+
+// ResetImageRevisedPrompt resets all changes to the "image_revised_prompt" field.
+func (m *UsageLogMutation) ResetImageRevisedPrompt() {
+	m.image_revised_prompt = nil
+	delete(m.clearedFields, usagelog.FieldImageRevisedPrompt)
+}
+
 // SetCacheTTLOverridden sets the "cache_ttl_overridden" field.
 func (m *UsageLogMutation) SetCacheTTLOverridden(b bool) {
 	m.cache_ttl_overridden = &b
@@ -36248,7 +36398,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 37)
+	fields := make([]string, 0, 40)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -36354,6 +36504,15 @@ func (m *UsageLogMutation) Fields() []string {
 	if m.image_size != nil {
 		fields = append(fields, usagelog.FieldImageSize)
 	}
+	if m.image_requested_size != nil {
+		fields = append(fields, usagelog.FieldImageRequestedSize)
+	}
+	if m.image_prompt != nil {
+		fields = append(fields, usagelog.FieldImagePrompt)
+	}
+	if m.image_revised_prompt != nil {
+		fields = append(fields, usagelog.FieldImageRevisedPrompt)
+	}
 	if m.cache_ttl_overridden != nil {
 		fields = append(fields, usagelog.FieldCacheTTLOverridden)
 	}
@@ -36438,6 +36597,12 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.ImageCount()
 	case usagelog.FieldImageSize:
 		return m.ImageSize()
+	case usagelog.FieldImageRequestedSize:
+		return m.ImageRequestedSize()
+	case usagelog.FieldImagePrompt:
+		return m.ImagePrompt()
+	case usagelog.FieldImageRevisedPrompt:
+		return m.ImageRevisedPrompt()
 	case usagelog.FieldCacheTTLOverridden:
 		return m.CacheTTLOverridden()
 	case usagelog.FieldCreatedAt:
@@ -36521,6 +36686,12 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldImageCount(ctx)
 	case usagelog.FieldImageSize:
 		return m.OldImageSize(ctx)
+	case usagelog.FieldImageRequestedSize:
+		return m.OldImageRequestedSize(ctx)
+	case usagelog.FieldImagePrompt:
+		return m.OldImagePrompt(ctx)
+	case usagelog.FieldImageRevisedPrompt:
+		return m.OldImageRevisedPrompt(ctx)
 	case usagelog.FieldCacheTTLOverridden:
 		return m.OldCacheTTLOverridden(ctx)
 	case usagelog.FieldCreatedAt:
@@ -36778,6 +36949,27 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetImageSize(v)
+		return nil
+	case usagelog.FieldImageRequestedSize:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageRequestedSize(v)
+		return nil
+	case usagelog.FieldImagePrompt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImagePrompt(v)
+		return nil
+	case usagelog.FieldImageRevisedPrompt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageRevisedPrompt(v)
 		return nil
 	case usagelog.FieldCacheTTLOverridden:
 		v, ok := value.(bool)
@@ -37096,6 +37288,15 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldImageSize) {
 		fields = append(fields, usagelog.FieldImageSize)
 	}
+	if m.FieldCleared(usagelog.FieldImageRequestedSize) {
+		fields = append(fields, usagelog.FieldImageRequestedSize)
+	}
+	if m.FieldCleared(usagelog.FieldImagePrompt) {
+		fields = append(fields, usagelog.FieldImagePrompt)
+	}
+	if m.FieldCleared(usagelog.FieldImageRevisedPrompt) {
+		fields = append(fields, usagelog.FieldImageRevisedPrompt)
+	}
 	return fields
 }
 
@@ -37151,6 +37352,15 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldImageSize:
 		m.ClearImageSize()
+		return nil
+	case usagelog.FieldImageRequestedSize:
+		m.ClearImageRequestedSize()
+		return nil
+	case usagelog.FieldImagePrompt:
+		m.ClearImagePrompt()
+		return nil
+	case usagelog.FieldImageRevisedPrompt:
+		m.ClearImageRevisedPrompt()
 		return nil
 	}
 	return fmt.Errorf("unknown UsageLog nullable field %s", name)
@@ -37264,6 +37474,15 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldImageSize:
 		m.ResetImageSize()
+		return nil
+	case usagelog.FieldImageRequestedSize:
+		m.ResetImageRequestedSize()
+		return nil
+	case usagelog.FieldImagePrompt:
+		m.ResetImagePrompt()
+		return nil
+	case usagelog.FieldImageRevisedPrompt:
+		m.ResetImageRevisedPrompt()
 		return nil
 	case usagelog.FieldCacheTTLOverridden:
 		m.ResetCacheTTLOverridden()

@@ -92,6 +92,12 @@ type UsageLog struct {
 	ImageCount int `json:"image_count,omitempty"`
 	// ImageSize holds the value of the "image_size" field.
 	ImageSize *string `json:"image_size,omitempty"`
+	// ImageRequestedSize holds the value of the "image_requested_size" field.
+	ImageRequestedSize *string `json:"image_requested_size,omitempty"`
+	// ImagePrompt holds the value of the "image_prompt" field.
+	ImagePrompt *string `json:"image_prompt,omitempty"`
+	// ImageRevisedPrompt holds the value of the "image_revised_prompt" field.
+	ImageRevisedPrompt *string `json:"image_revised_prompt,omitempty"`
 	// CacheTTLOverridden holds the value of the "cache_ttl_overridden" field.
 	CacheTTLOverridden bool `json:"cache_ttl_overridden,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -185,7 +191,7 @@ func (*UsageLog) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case usagelog.FieldID, usagelog.FieldUserID, usagelog.FieldAPIKeyID, usagelog.FieldAccountID, usagelog.FieldChannelID, usagelog.FieldGroupID, usagelog.FieldSubscriptionID, usagelog.FieldInputTokens, usagelog.FieldOutputTokens, usagelog.FieldCacheCreationTokens, usagelog.FieldCacheReadTokens, usagelog.FieldCacheCreation5mTokens, usagelog.FieldCacheCreation1hTokens, usagelog.FieldBillingType, usagelog.FieldDurationMs, usagelog.FieldFirstTokenMs, usagelog.FieldImageCount:
 			values[i] = new(sql.NullInt64)
-		case usagelog.FieldRequestID, usagelog.FieldModel, usagelog.FieldRequestedModel, usagelog.FieldUpstreamModel, usagelog.FieldModelMappingChain, usagelog.FieldBillingTier, usagelog.FieldBillingMode, usagelog.FieldUserAgent, usagelog.FieldIPAddress, usagelog.FieldImageSize:
+		case usagelog.FieldRequestID, usagelog.FieldModel, usagelog.FieldRequestedModel, usagelog.FieldUpstreamModel, usagelog.FieldModelMappingChain, usagelog.FieldBillingTier, usagelog.FieldBillingMode, usagelog.FieldUserAgent, usagelog.FieldIPAddress, usagelog.FieldImageSize, usagelog.FieldImageRequestedSize, usagelog.FieldImagePrompt, usagelog.FieldImageRevisedPrompt:
 			values[i] = new(sql.NullString)
 		case usagelog.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -434,6 +440,27 @@ func (_m *UsageLog) assignValues(columns []string, values []any) error {
 				_m.ImageSize = new(string)
 				*_m.ImageSize = value.String
 			}
+		case usagelog.FieldImageRequestedSize:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_requested_size", values[i])
+			} else if value.Valid {
+				_m.ImageRequestedSize = new(string)
+				*_m.ImageRequestedSize = value.String
+			}
+		case usagelog.FieldImagePrompt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_prompt", values[i])
+			} else if value.Valid {
+				_m.ImagePrompt = new(string)
+				*_m.ImagePrompt = value.String
+			}
+		case usagelog.FieldImageRevisedPrompt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_revised_prompt", values[i])
+			} else if value.Valid {
+				_m.ImageRevisedPrompt = new(string)
+				*_m.ImageRevisedPrompt = value.String
+			}
 		case usagelog.FieldCacheTTLOverridden:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field cache_ttl_overridden", values[i])
@@ -637,6 +664,21 @@ func (_m *UsageLog) String() string {
 	builder.WriteString(", ")
 	if v := _m.ImageSize; v != nil {
 		builder.WriteString("image_size=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ImageRequestedSize; v != nil {
+		builder.WriteString("image_requested_size=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ImagePrompt; v != nil {
+		builder.WriteString("image_prompt=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ImageRevisedPrompt; v != nil {
+		builder.WriteString("image_revised_prompt=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

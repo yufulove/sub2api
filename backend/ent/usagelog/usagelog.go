@@ -84,6 +84,12 @@ const (
 	FieldImageCount = "image_count"
 	// FieldImageSize holds the string denoting the image_size field in the database.
 	FieldImageSize = "image_size"
+	// FieldImageRequestedSize holds the string denoting the image_requested_size field in the database.
+	FieldImageRequestedSize = "image_requested_size"
+	// FieldImagePrompt holds the string denoting the image_prompt field in the database.
+	FieldImagePrompt = "image_prompt"
+	// FieldImageRevisedPrompt holds the string denoting the image_revised_prompt field in the database.
+	FieldImageRevisedPrompt = "image_revised_prompt"
 	// FieldCacheTTLOverridden holds the string denoting the cache_ttl_overridden field in the database.
 	FieldCacheTTLOverridden = "cache_ttl_overridden"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -175,6 +181,9 @@ var Columns = []string{
 	FieldIPAddress,
 	FieldImageCount,
 	FieldImageSize,
+	FieldImageRequestedSize,
+	FieldImagePrompt,
+	FieldImageRevisedPrompt,
 	FieldCacheTTLOverridden,
 	FieldCreatedAt,
 }
@@ -242,6 +251,8 @@ var (
 	DefaultImageCount int
 	// ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
 	ImageSizeValidator func(string) error
+	// ImageRequestedSizeValidator is a validator for the "image_requested_size" field. It is called by the builders before save.
+	ImageRequestedSizeValidator func(string) error
 	// DefaultCacheTTLOverridden holds the default value on creation for the "cache_ttl_overridden" field.
 	DefaultCacheTTLOverridden bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -429,6 +440,21 @@ func ByImageCount(opts ...sql.OrderTermOption) OrderOption {
 // ByImageSize orders the results by the image_size field.
 func ByImageSize(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImageSize, opts...).ToFunc()
+}
+
+// ByImageRequestedSize orders the results by the image_requested_size field.
+func ByImageRequestedSize(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageRequestedSize, opts...).ToFunc()
+}
+
+// ByImagePrompt orders the results by the image_prompt field.
+func ByImagePrompt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImagePrompt, opts...).ToFunc()
+}
+
+// ByImageRevisedPrompt orders the results by the image_revised_prompt field.
+func ByImageRevisedPrompt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageRevisedPrompt, opts...).ToFunc()
 }
 
 // ByCacheTTLOverridden orders the results by the cache_ttl_overridden field.
