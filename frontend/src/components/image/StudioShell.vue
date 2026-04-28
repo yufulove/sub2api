@@ -25,10 +25,9 @@ const authStore = useAuthStore()
 const imageStudioStore = useImageStudioStore()
 
 const navItems: StudioNavItem[] = [
-  { path: '/studio/generate', label: '生成' },
-  { path: '/studio/history', label: '历史' },
-  { path: '/studio/pricing', label: '价格' },
-  { path: '/studio', label: '概览' }
+  { path: '/studio/generate', label: '生成图片' },
+  { path: '/studio/history', label: '历史记录' },
+  { path: '/studio/pricing', label: '价格与路由' }
 ]
 
 const brandName = computed(() => appStore.siteName || 'FionaAI')
@@ -59,6 +58,7 @@ const mainSiteURL = computed(() =>
     })
   )
 )
+const mainSiteKeysURL = computed(() => resolveMainSiteURL('/keys'))
 const mainSiteLabel = computed(() =>
   authStore.isAuthenticated ? '主站工作台' : '返回主站'
 )
@@ -70,19 +70,25 @@ function isActive(path: string): boolean {
 
 <template>
   <header class="studio-shell-header" :style="{ '--studio-shell-max-width': props.maxWidth }">
-    <div class="studio-shell-card">
-      <div class="brand-cluster">
-        <RouterLink to="/studio" class="brand-lockup">
-          <span class="brand-mark">图</span>
-          <div>
-            <p class="brand-kicker">图片工作台</p>
-            <strong>{{ brandName }} Studio</strong>
-          </div>
+    <div class="studio-topbar">
+      <RouterLink to="/studio/generate" class="brand-lockup">
+        <span class="brand-mark">IS</span>
+        <div>
+          <strong>{{ brandName }} Studio</strong>
+          <span>图片工作台</span>
+        </div>
+      </RouterLink>
+
+      <nav class="studio-nav" aria-label="Studio navigation">
+        <RouterLink
+          v-for="item in navItems"
+          :key="item.path"
+          :to="item.path"
+          :class="['nav-pill', isActive(item.path) && 'nav-pill-active']"
+        >
+          {{ item.label }}
         </RouterLink>
-        <p class="brand-note">
-          独立处理图片生成，登录、钱包和 API Key 继续沿用主站账号体系。
-        </p>
-      </div>
+      </nav>
 
       <div class="meta-cluster">
         <div class="meta-pill">
@@ -93,22 +99,14 @@ function isActive(path: string): boolean {
           <span>余额</span>
           <strong>{{ walletLabel }}</strong>
         </div>
+        <a :href="mainSiteKeysURL" class="main-site-link main-site-link-primary">
+          配置 API Key
+        </a>
         <a :href="mainSiteURL" class="main-site-link">
           {{ mainSiteLabel }}
         </a>
       </div>
     </div>
-
-    <nav class="studio-nav" aria-label="Studio navigation">
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.path"
-        :to="item.path"
-        :class="['nav-pill', isActive(item.path) && 'nav-pill-active']"
-      >
-        {{ item.label }}
-      </RouterLink>
-    </nav>
   </header>
 </template>
 
@@ -118,33 +116,24 @@ function isActive(path: string): boolean {
   margin: 0 auto 16px;
 }
 
-.studio-shell-card,
-.studio-nav {
+.studio-topbar {
   border: 1px solid rgba(18, 35, 30, 0.12);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 12px 32px rgba(18, 35, 30, 0.06);
-}
-
-.studio-shell-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 16px;
-}
-
-.brand-cluster {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
+  padding: 8px;
 }
 
 .brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 190px;
+  padding: 6px 8px;
   color: inherit;
   text-decoration: none;
   white-space: nowrap;
@@ -159,26 +148,33 @@ function isActive(path: string): boolean {
   border-radius: 8px;
   background: #0f766e;
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 800;
 }
 
-.brand-kicker {
-  margin: 0 0 4px;
-  font-size: 0.78rem;
-  color: rgba(18, 35, 30, 0.54);
-}
-
 .brand-lockup strong {
+  display: block;
   font-size: 1rem;
 }
 
-.brand-note {
-  margin: 0;
-  max-width: 36rem;
-  color: rgba(18, 35, 30, 0.72);
-  line-height: 1.5;
-  font-size: 0.92rem;
+.brand-lockup span {
+  display: block;
+  margin-top: 2px;
+  color: rgba(18, 35, 30, 0.56);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.studio-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  padding: 4px;
+  border-radius: 8px;
+  background: rgba(18, 35, 30, 0.04);
 }
 
 .meta-cluster {
@@ -218,17 +214,15 @@ function isActive(path: string): boolean {
   transition: transform 160ms ease, border-color 160ms ease;
 }
 
+.main-site-link-primary {
+  border-color: rgba(15, 118, 110, 0.32);
+  background: rgba(15, 118, 110, 0.09);
+  color: #0b5f59;
+}
+
 .main-site-link:hover,
 .nav-pill:hover {
   transform: translateY(-1px);
-}
-
-.studio-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 6px;
 }
 
 .nav-pill {
@@ -251,15 +245,9 @@ function isActive(path: string): boolean {
 }
 
 @media (max-width: 900px) {
-  .studio-shell-card {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .brand-cluster {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
+  .studio-topbar {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .meta-cluster {
@@ -270,14 +258,6 @@ function isActive(path: string): boolean {
 @media (max-width: 760px) {
   .studio-shell-header {
     margin-bottom: 16px;
-  }
-
-  .studio-shell-card {
-    padding: 14px;
-  }
-
-  .studio-nav {
-    padding: 6px;
   }
 
   .nav-pill,

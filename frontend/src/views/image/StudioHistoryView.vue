@@ -54,10 +54,10 @@ const isSessionHydrating = computed(() => imageStudioStore.isHydrating)
 const historyFlows = computed(() => buildImageStudioHistoryFlows(usageRecords.value, filteredSessionCards.value))
 
 const keyOptions = computed<SelectOption[]>(() => [
-  { value: null, label: 'All API keys' },
+  { value: null, label: '全部 API Key' },
   ...apiKeys.value.map((key) => ({
     value: key.id,
-    label: key.group?.name ? `${key.name} / ${key.group.name}` : `${key.name} / No group`
+    label: key.group?.name ? `${key.name} / ${key.group.name}` : `${key.name} / 未绑定分组`
   }))
 ])
 
@@ -88,7 +88,7 @@ async function loadKeys() {
     const response = await keysAPI.list(1, 200)
     apiKeys.value = response.items
   } catch {
-    appStore.showError('Failed to load API keys for history filters.')
+    appStore.showError('历史筛选的 API Key 加载失败。')
   } finally {
     loadingKeys.value = false
   }
@@ -153,7 +153,7 @@ async function loadUsageHistory() {
     if (isAbortError(error)) {
       return
     }
-    errorMessage.value = 'Failed to load image usage history.'
+    errorMessage.value = '图片用量历史加载失败。'
     appStore.showError(errorMessage.value)
   } finally {
     if (pendingController === controller) {
@@ -190,7 +190,7 @@ function formatDateOnly(value: Date): string {
 }
 
 function formatTimestamp(value: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('zh-CN', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -199,7 +199,7 @@ function formatTimestamp(value: string): string {
 }
 
 function formatFlowTimestamp(value: number): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('zh-CN', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -208,7 +208,7 @@ function formatFlowTimestamp(value: number): string {
 }
 
 function formatSessionTimestamp(value: number): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('zh-CN', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -241,7 +241,7 @@ function reuseCardPrompt(card: StudioSessionGeneration) {
 }
 
 function copyCardPrompt(card: StudioSessionGeneration) {
-  void copyToClipboard(card.prompt, 'Prompt copied to clipboard')
+  void copyToClipboard(card.prompt, '提示词已复制')
 }
 
 function copyCardStudioLink(card: StudioSessionGeneration) {
@@ -251,14 +251,14 @@ function copyCardStudioLink(card: StudioSessionGeneration) {
       model: card.model,
       size: card.size
     },
-    'Studio link copied to clipboard'
+    '配置链接已复制'
   )
 }
 
 function openUsageRecordInStudio(item: UsageLog) {
   const preset = buildUsageComposerPreset(item)
   if (!preset) {
-    appStore.showError('Prompt metadata is not available for this history record')
+    appStore.showError('这条历史记录没有可复用的提示词元数据')
     return
   }
 
@@ -268,21 +268,21 @@ function openUsageRecordInStudio(item: UsageLog) {
 function copyUsageRecordPrompt(item: UsageLog) {
   const prompt = resolveUsageImagePrompt(item)
   if (!prompt) {
-    appStore.showError('Prompt metadata is not available for this history record')
+    appStore.showError('这条历史记录没有可复制的提示词元数据')
     return
   }
 
-  void copyToClipboard(prompt, 'Prompt copied to clipboard')
+  void copyToClipboard(prompt, '提示词已复制')
 }
 
 function copyUsageRecordStudioLink(item: UsageLog) {
   const preset = buildUsageComposerPreset(item)
   if (!preset) {
-    appStore.showError('Prompt metadata is not available for this history record')
+    appStore.showError('这条历史记录没有可复制的配置链接')
     return
   }
 
-  copyComposerPresetLink(preset, 'Studio link copied to clipboard')
+  copyComposerPresetLink(preset, '配置链接已复制')
 }
 
 function openFlowInStudio(flow: ImageStudioHistoryFlow) {
@@ -290,11 +290,11 @@ function openFlowInStudio(flow: ImageStudioHistoryFlow) {
 }
 
 function copyFlowPrompt(flow: ImageStudioHistoryFlow) {
-  void copyToClipboard(flow.prompt, 'Prompt copied to clipboard')
+  void copyToClipboard(flow.prompt, '提示词已复制')
 }
 
 function copyFlowStudioLink(flow: ImageStudioHistoryFlow) {
-  copyComposerPresetLink(flow.composerPreset, 'Studio link copied to clipboard')
+  copyComposerPresetLink(flow.composerPreset, '配置链接已复制')
 }
 
 function resolveUsageRecordPrompt(item: UsageLog): string | null {
@@ -354,41 +354,40 @@ onUnmounted(() => {
 
     <section class="history-hero">
       <div>
-        <p class="eyebrow">Image History</p>
-        <h1>Review recent renders, grouped flows, and billed image activity</h1>
+        <p class="eyebrow">历史记录</p>
+        <h1>图片生成历史</h1>
         <p class="copy">
-          Use session cards for the images you just generated, then move up one level into grouped prompt
-          flows before dropping into the raw usage ledger.
+          本地结果、提示词系列和计费请求集中管理，方便继续生成、复制提示词和核对费用。
         </p>
       </div>
 
       <div class="hero-actions">
-        <RouterLink class="ghost-link" to="/studio/generate">Back to generate</RouterLink>
+        <RouterLink class="ghost-link" to="/studio/generate">返回生成</RouterLink>
         <button class="ghost-button" type="button" :disabled="loading" @click="loadUsageHistory">
-          Refresh history
+          刷新记录
         </button>
       </div>
     </section>
 
     <section class="stats-grid">
       <article class="stat-card">
-        <span>Session Renders</span>
+        <span>本地结果</span>
         <strong>{{ filteredSessionCards.length }}</strong>
       </article>
       <article class="stat-card">
-        <span>Prompt Flows</span>
+        <span>提示词系列</span>
         <strong>{{ flowGroupCount }}</strong>
       </article>
       <article class="stat-card">
-        <span>Usage Requests</span>
+        <span>计费请求</span>
         <strong>{{ usageRequestCount }}</strong>
       </article>
       <article class="stat-card">
-        <span>Total Images</span>
+        <span>图片数量</span>
         <strong>{{ usageImageCount }}</strong>
       </article>
       <article class="stat-card">
-        <span>Billed Cost</span>
+        <span>计费金额</span>
         <strong>{{ formatCost(usageTotalCost, 4) }}</strong>
       </article>
     </section>
@@ -396,11 +395,10 @@ onUnmounted(() => {
     <section class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Session</p>
-          <h2>Current browser session renders</h2>
+          <p class="eyebrow">本地结果</p>
+          <h2>当前浏览器图片</h2>
           <p class="copy">
-            These cards stay tied to the current signed-in account in this browser, so you can move between
-            generate and history without losing what you just made.
+            这里显示当前浏览器保留的最新生成结果。
           </p>
         </div>
         <button
@@ -409,18 +407,18 @@ onUnmounted(() => {
           type="button"
           @click="imageStudioStore.clearSessionGenerations()"
         >
-          Clear session renders
+          清空本地结果
         </button>
       </div>
 
       <div v-if="isSessionHydrating && filteredSessionCards.length === 0" class="empty-state">
-        <strong>Restoring browser session renders</strong>
-        <p>Saved image cards for this account are loading from local browser storage.</p>
+        <strong>正在恢复本地图片</strong>
+        <p>正在读取当前账号在这个浏览器里保存的结果。</p>
       </div>
 
       <div v-else-if="filteredSessionCards.length === 0" class="empty-state">
-        <strong>No session renders yet</strong>
-        <p>Generate an image in this account session and it will appear here immediately.</p>
+        <strong>暂无本地结果</strong>
+        <p>生成图片后会立即出现在这里。</p>
       </div>
 
       <div v-else class="session-grid">
@@ -439,7 +437,7 @@ onUnmounted(() => {
             </div>
             <p class="prompt-text">{{ card.prompt }}</p>
             <p v-if="card.revisedPrompt && card.revisedPrompt !== card.prompt" class="secondary-text">
-              Revised prompt: {{ card.revisedPrompt }}
+              修订提示词：{{ card.revisedPrompt }}
             </p>
             <div class="footer-row">
               <div class="tag-row">
@@ -448,16 +446,16 @@ onUnmounted(() => {
               </div>
               <div class="card-actions">
                 <button type="button" class="inline-button" @click="reuseCardPrompt(card)">
-                  Open in studio
+                  继续生成
                 </button>
                 <button type="button" class="inline-button" @click="copyCardPrompt(card)">
-                  Copy prompt
+                  复制提示词
                 </button>
                 <button type="button" class="inline-button" @click="copyCardStudioLink(card)">
-                  Copy studio link
+                  复制配置链接
                 </button>
                 <button type="button" class="inline-button" @click="downloadCard(card, index)">
-                  Download
+                  下载
                 </button>
               </div>
             </div>
@@ -469,18 +467,17 @@ onUnmounted(() => {
     <section class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Flows</p>
-          <h2>Prompt-grouped image series</h2>
+          <p class="eyebrow">提示词系列</p>
+          <h2>按提示词聚合</h2>
           <p class="copy">
-            This gallery view clusters the same prompt, model, and size into one reusable creative thread,
-            so you can continue a series without scanning one ledger row at a time.
+            相同提示词、模型和尺寸会聚合成一组，方便继续同一批创意。
           </p>
         </div>
       </div>
 
       <div v-if="historyFlows.length === 0" class="empty-state">
-        <strong>No prompt flows yet</strong>
-        <p>Generate images or accumulate billed prompt metadata and grouped series will appear here.</p>
+        <strong>暂无提示词系列</strong>
+        <p>产生图片或计费记录后，这里会自动聚合可复用系列。</p>
       </div>
 
       <div v-else class="flow-grid">
@@ -500,43 +497,43 @@ onUnmounted(() => {
               />
             </div>
             <div v-else class="flow-preview-placeholder">
-              <strong>No local preview</strong>
-              <p>This browser does not have a recent render card for this series yet.</p>
+              <strong>暂无本地预览</strong>
+              <p>当前浏览器还没有这组提示词的图片卡片。</p>
             </div>
           </div>
 
           <div class="flow-body">
             <div class="meta-row">
               <span>{{ formatFlowTimestamp(flow.latestCreatedAt) }}</span>
-              <span>{{ flow.model || 'Unknown model' }}</span>
+              <span>{{ flow.model || '未知模型' }}</span>
             </div>
 
             <p class="prompt-text">{{ flow.prompt }}</p>
             <p v-if="flow.revisedPrompt && flow.revisedPrompt !== flow.prompt" class="secondary-text">
-              Latest revised prompt: {{ flow.revisedPrompt }}
+              最新修订提示词：{{ flow.revisedPrompt }}
             </p>
 
             <div class="tag-row flow-tags">
-              <span>{{ flow.size || 'Unknown size' }}</span>
-              <span>{{ flow.usageRequestCount }} billed request{{ flow.usageRequestCount === 1 ? '' : 's' }}</span>
-              <span>{{ flow.usageImageCount }} billed image{{ flow.usageImageCount === 1 ? '' : 's' }}</span>
-              <span>{{ flow.sessionRenderCount }} local preview{{ flow.sessionRenderCount === 1 ? '' : 's' }}</span>
+              <span>{{ flow.size || '未知尺寸' }}</span>
+              <span>{{ flow.usageRequestCount }} 次计费请求</span>
+              <span>{{ flow.usageImageCount }} 张计费图片</span>
+              <span>{{ flow.sessionRenderCount }} 张本地预览</span>
             </div>
 
             <div class="footer-row flow-footer">
               <div class="flow-summary">
                 <strong>{{ formatCost(flow.totalCost, 4) }}</strong>
-                <span>{{ flow.keyNames.join(' / ') || 'No key metadata' }}</span>
+                <span>{{ flow.keyNames.join(' / ') || '无 Key 元数据' }}</span>
               </div>
               <div class="card-actions">
                 <button type="button" class="inline-button" @click="openFlowInStudio(flow)">
-                  Open in studio
+                  继续生成
                 </button>
                 <button type="button" class="inline-button" @click="copyFlowPrompt(flow)">
-                  Copy prompt
+                  复制提示词
                 </button>
                 <button type="button" class="inline-button" @click="copyFlowStudioLink(flow)">
-                  Copy studio link
+                  复制配置链接
                 </button>
               </div>
             </div>
@@ -548,11 +545,10 @@ onUnmounted(() => {
     <section class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Ledger</p>
-          <h2>Billed image requests</h2>
+          <p class="eyebrow">计费请求</p>
+          <h2>图片用量明细</h2>
           <p class="copy">
-            These records come from the durable usage log. They show request metadata, billed cost, and image count
-            even when the original render card is no longer in the local session.
+            这里来自持久化用量日志，即使本地图片卡片不存在，也能核对请求和费用。
           </p>
         </div>
       </div>
@@ -587,8 +583,8 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="usageRecords.length === 0" class="empty-state">
-        <strong>No image usage records</strong>
-        <p>There are no `image_count > 0` records for the current filter yet.</p>
+        <strong>暂无图片用量记录</strong>
+        <p>当前筛选条件下还没有图片请求。</p>
       </div>
 
       <div v-else class="ledger-list">
@@ -600,14 +596,14 @@ onUnmounted(() => {
           <div class="ledger-main">
             <div class="meta-row">
               <span>{{ formatTimestamp(item.created_at) }}</span>
-              <span>{{ item.api_key?.name || 'Unknown key' }}</span>
+              <span>{{ item.api_key?.name || '未知 Key' }}</span>
             </div>
             <h3>{{ item.model }}</h3>
             <p class="secondary-text">
-              {{ item.image_count }} image{{ item.image_count > 1 ? 's' : '' }} /
+              {{ item.image_count }} 张图片 /
               {{ resolveUsageRecordRequestedSize(item) || item.image_size || '2K' }}
               <template v-if="item.image_size && resolveUsageRecordRequestedSize(item) !== item.image_size">
-                / billed as {{ item.image_size }}
+                / 按 {{ item.image_size }} 计费
               </template>
             </p>
             <p v-if="resolveUsageRecordPrompt(item)" class="prompt-text">
@@ -621,26 +617,26 @@ onUnmounted(() => {
               "
               class="secondary-text"
             >
-              Revised prompt: {{ item.image_revised_prompt }}
+              修订提示词：{{ item.image_revised_prompt }}
             </p>
             <p v-else-if="!resolveUsageRecordPrompt(item)" class="secondary-text">
-              Prompt metadata is not available for this older history record yet.
+              这条较早记录没有提示词元数据。
             </p>
             <div v-if="hasUsageRecordComposerPreset(item)" class="card-actions ledger-actions">
               <button type="button" class="inline-button" @click="openUsageRecordInStudio(item)">
-                Open in studio
+                继续生成
               </button>
               <button type="button" class="inline-button" @click="copyUsageRecordPrompt(item)">
-                Copy prompt
+                复制提示词
               </button>
               <button type="button" class="inline-button" @click="copyUsageRecordStudioLink(item)">
-                Copy studio link
+                复制配置链接
               </button>
             </div>
           </div>
           <div class="ledger-side">
             <strong>{{ formatCost(item.actual_cost, 4) }}</strong>
-            <span>{{ item.group?.name || 'No group' }}</span>
+            <span>{{ item.group?.name || '无分组' }}</span>
           </div>
         </article>
       </div>
@@ -650,17 +646,15 @@ onUnmounted(() => {
 
 <style scoped>
 .history-shell {
-  --paper: #f4eee5;
-  --panel: rgba(255, 255, 255, 0.78);
+  --paper: #f6f7f5;
+  --panel: #ffffff;
   --ink: #142720;
   --muted: rgba(20, 39, 32, 0.7);
   --line: rgba(20, 39, 32, 0.12);
-  --accent: #b14b2f;
+  --accent: #0f766e;
   min-height: 100vh;
-  padding: 40px 24px 72px;
-  background:
-    radial-gradient(circle at top right, rgba(230, 138, 84, 0.16), transparent 28rem),
-    linear-gradient(180deg, #faf6ef 0%, var(--paper) 100%);
+  padding: 24px 24px 56px;
+  background: linear-gradient(180deg, #fbfcfb 0%, var(--paper) 100%);
   color: var(--ink);
   font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
 }
@@ -674,28 +668,31 @@ onUnmounted(() => {
 
 .history-hero {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(18, 35, 30, 0.06);
 }
 
 .eyebrow {
-  margin: 0 0 12px;
-  font-size: 0.78rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--accent);
 }
 
 .history-hero h1,
 .panel-header h2 {
   margin: 0;
-  line-height: 0.96;
-  letter-spacing: -0.05em;
+  line-height: 1.18;
 }
 
 .history-hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4.1rem);
+  font-size: 1.65rem;
 }
 
 .copy,
@@ -706,8 +703,9 @@ onUnmounted(() => {
 
 .copy {
   max-width: 44rem;
-  margin: 16px 0 0;
-  line-height: 1.72;
+  margin: 8px 0 0;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .hero-actions {
@@ -725,7 +723,7 @@ onUnmounted(() => {
   min-height: 42px;
   padding: 0 16px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.68);
   color: inherit;
   text-decoration: none;
@@ -744,28 +742,25 @@ onUnmounted(() => {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 14px;
-  margin-top: 24px;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 .stat-card,
 .panel {
   border: 1px solid var(--line);
-  border-radius: 28px;
+  border-radius: 8px;
   background: var(--panel);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 20px 60px rgba(20, 39, 32, 0.08);
+  box-shadow: 0 12px 32px rgba(20, 39, 32, 0.06);
 }
 
 .stat-card {
-  padding: 18px 20px;
+  padding: 14px 16px;
 }
 
 .stat-card span {
   display: block;
   font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: rgba(20, 39, 32, 0.56);
 }
 
@@ -776,8 +771,8 @@ onUnmounted(() => {
 }
 
 .panel {
-  padding: 28px;
-  margin-top: 20px;
+  padding: 18px;
+  margin-top: 16px;
 }
 
 .panel-header {
@@ -788,7 +783,7 @@ onUnmounted(() => {
 }
 
 .panel-header h2 {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: 1.35rem;
 }
 
 .filter-bar {
@@ -810,7 +805,7 @@ onUnmounted(() => {
   min-height: 42px;
   padding: 0 16px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.7);
   color: inherit;
   font: inherit;
@@ -824,8 +819,8 @@ onUnmounted(() => {
 }
 
 :deep(.select-trigger) {
-  min-height: 48px;
-  border-radius: 18px;
+  min-height: 42px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.86);
   border-color: rgba(20, 39, 32, 0.12);
 }
@@ -847,7 +842,7 @@ onUnmounted(() => {
 .ledger-card,
 .empty-state {
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.74);
 }
 
@@ -927,8 +922,6 @@ onUnmounted(() => {
 
 .meta-row {
   font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: rgba(20, 39, 32, 0.56);
 }
 
@@ -953,7 +946,7 @@ onUnmounted(() => {
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: 6px;
   background: rgba(20, 39, 32, 0.07);
   font-size: 0.78rem;
 }
@@ -1049,7 +1042,7 @@ onUnmounted(() => {
 .alert-box {
   margin-top: 18px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: rgba(163, 42, 42, 0.1);
   color: #7b251e;
 }

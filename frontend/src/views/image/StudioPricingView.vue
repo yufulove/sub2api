@@ -21,9 +21,9 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 
 const priceTiers: PriceTier[] = [
-  { key: 'image_price_1k', label: '1K', detail: '1024x1024 default square' },
-  { key: 'image_price_2k', label: '2K', detail: '1536x1024, 1024x1536, 2048x2048' },
-  { key: 'image_price_4k', label: '4K', detail: '4096x4096 large format' }
+  { key: 'image_price_1k', label: '1K', detail: '1024x1024 默认方图' },
+  { key: 'image_price_2k', label: '2K', detail: '1536x1024、1024x1536、2048x2048' },
+  { key: 'image_price_4k', label: '4K', detail: '4096x4096 大图' }
 ]
 
 const availableGroups = ref<Group[]>([])
@@ -64,17 +64,17 @@ const lowestEntryPrice = computed<number | null>(() => {
 })
 
 const primaryActionLabel = computed(() =>
-  authStore.isAuthenticated ? 'Open generate workspace' : 'Sign in to generate'
+  authStore.isAuthenticated ? '去生成图片' : '登录后生成'
 )
 
 const surfaceStatusLabel = computed(() => {
   if (!authStore.isAuthenticated) {
-    return 'Sign in to see your account-specific group pricing'
+    return '登录后显示账号价格'
   }
   if (loading.value) {
-    return 'Loading available groups'
+    return '正在加载可用分组'
   }
-  return `${readyGroups.value.length} ready route${readyGroups.value.length === 1 ? '' : 's'}`
+  return `${readyGroups.value.length} 条可用路由`
 })
 
 watch(
@@ -112,7 +112,7 @@ async function loadAvailableGroups() {
     if (requestId !== activeRequestId) {
       return
     }
-    errorMessage.value = 'Failed to load your available groups.'
+    errorMessage.value = '可用分组加载失败。'
     appStore.showError(errorMessage.value)
   } finally {
     if (requestId === activeRequestId) {
@@ -144,7 +144,7 @@ function compareGroups(left: Group, right: Group): number {
 
 function formatPrice(value: number | null): string {
   if (value == null || !Number.isFinite(value)) {
-    return 'Not configured'
+    return '未配置'
   }
 
   return formatWalletMoneyFromInternal(value, appStore.cachedPublicSettings, {
@@ -166,31 +166,31 @@ function platformLabel(platform?: string): string {
     case 'sora':
       return 'Sora'
     default:
-      return 'Unknown'
+      return '未知'
   }
 }
 
 function accessLabel(group: Group): string {
   if (group.subscription_type === 'subscription') {
-    return 'Subscription'
+    return '订阅'
   }
   if (group.is_exclusive) {
-    return 'Allowlisted'
+    return '白名单'
   }
-  return 'Public bindable'
+  return '可绑定'
 }
 
 function routeStatus(group: Group): string {
   if (group.status !== 'active') {
-    return 'Inactive group'
+    return '分组未启用'
   }
   if (group.platform === 'openai') {
-    return 'Waiting for OpenAI upstream image service'
+    return 'OpenAI 图片上游暂未接入'
   }
   if (!hasAnyImagePrice(group)) {
-    return 'No image pricing configured'
+    return '未配置图片价格'
   }
-  return 'Ready on /v1/images/generations'
+  return '可用于 /v1/images/generations'
 }
 </script>
 
@@ -200,72 +200,55 @@ function routeStatus(group: Group): string {
 
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Image Pricing</p>
-        <h1>Know what each image route costs before you generate</h1>
+        <p class="eyebrow">价格与路由</p>
+        <h1>图片价格矩阵</h1>
         <p class="lead">
-          Compare ready image routes, check 1K, 2K, and 4K pricing, and see which groups are blocked
-          before you spend wallet balance on a generation run.
+          对比当前账号可用图片分组的 1K、2K、4K 价格，并确认哪些路由现在可用。
         </p>
 
         <div class="hero-actions">
           <button class="primary-button" type="button" @click="handlePrimaryAction">
             {{ primaryActionLabel }}
           </button>
-          <a class="ghost-link" :href="mainSiteKeysURL">Manage API keys</a>
-          <RouterLink class="ghost-link" to="/studio/history">Open history</RouterLink>
+          <a class="ghost-link" :href="mainSiteKeysURL">配置 API Key</a>
+          <RouterLink class="ghost-link" to="/studio/history">历史记录</RouterLink>
         </div>
       </div>
 
       <aside class="hero-panel">
-        <span class="panel-tag">Dedicated route</span>
+        <span class="panel-tag">当前账号</span>
         <dl class="panel-stats">
           <div>
-            <dt>Visible pricing groups</dt>
+            <dt>已配置价格</dt>
             <dd>{{ authStore.isAuthenticated ? totalPricedGroups : '--' }}</dd>
           </div>
           <div>
-            <dt>Ready now</dt>
+            <dt>可用路由</dt>
             <dd>{{ authStore.isAuthenticated ? readyGroups.length : '--' }}</dd>
           </div>
           <div>
-            <dt>Lowest 1K tier</dt>
-            <dd>{{ authStore.isAuthenticated ? formatPrice(lowestEntryPrice) : 'Sign in' }}</dd>
+            <dt>最低 1K 价格</dt>
+            <dd>{{ authStore.isAuthenticated ? formatPrice(lowestEntryPrice) : '请登录' }}</dd>
           </div>
           <div>
-            <dt>Billing surface</dt>
+            <dt>状态</dt>
             <dd>{{ surfaceStatusLabel }}</dd>
           </div>
         </dl>
       </aside>
     </section>
 
-    <section class="notes-grid">
-      <article class="note-card">
-        <h2>Billing model</h2>
-        <p>Image requests are billed by size tier, so cost stays obvious before you hit generate.</p>
-      </article>
-      <article class="note-card">
-        <h2>Wallet model</h2>
-        <p>The image site uses the same wallet and account balance you already manage on the main site.</p>
-      </article>
-      <article class="note-card">
-        <h2>Routing model</h2>
-        <p>Only image-capable routes should be used here, so pricing and availability are shown explicitly.</p>
-      </article>
-    </section>
-
     <section v-if="!authStore.isAuthenticated" class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Sign In</p>
-          <h2>Account pricing depends on your available groups</h2>
+          <p class="eyebrow">登录后查看</p>
+          <h2>账号价格取决于可用分组</h2>
           <p class="copy">
-            This page can only show real prices after login because pricing is tied to the groups your account
-            may bind to API keys. Sign in, then the matrix below will switch from notes to your live routes.
+            图片价格来自当前账号可绑定的分组。登录后会显示真实路由和价格。
           </p>
         </div>
         <button class="primary-button" type="button" @click="handlePrimaryAction">
-          Sign in and load pricing
+          登录并加载价格
         </button>
       </div>
     </section>
@@ -273,18 +256,17 @@ function routeStatus(group: Group): string {
     <section v-else class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Ready Groups</p>
-          <h2>Price matrix for image-capable routes</h2>
+          <p class="eyebrow">可用分组</p>
+          <h2>图片路由价格</h2>
           <p class="copy">
-            These groups are available to your account and ready for image generation right now. Prices below
-            are the live group rates surfaced from the backend.
+            下列分组已对当前账号开放，并且可以用于图片生成。
           </p>
         </div>
         <div class="panel-actions">
           <button class="ghost-button" type="button" :disabled="loading" @click="loadAvailableGroups">
-            Refresh groups
+            刷新分组
           </button>
-          <a class="ghost-link" :href="mainSiteUsageURL">Usage ledger</a>
+          <a class="ghost-link" :href="mainSiteUsageURL">用量明细</a>
         </div>
       </div>
 
@@ -299,10 +281,9 @@ function routeStatus(group: Group): string {
       </div>
 
       <div v-else-if="readyGroups.length === 0" class="empty-state">
-        <strong>No ready image routes for this account</strong>
+        <strong>当前账号暂无可用图片路由</strong>
         <p>
-          Your available groups are either missing image pricing, inactive, or waiting for an upstream image
-          implementation. Check the blocked list below or bind a different group from the main site.
+          可用分组可能未配置图片价格、未启用，或者上游图片能力暂未接入。
         </p>
       </div>
 
@@ -340,7 +321,7 @@ function routeStatus(group: Group): string {
 
           <div class="card-footer">
             <span>{{ routeStatus(group) }}</span>
-            <RouterLink class="inline-link" to="/studio/generate">Generate</RouterLink>
+            <RouterLink class="inline-link" to="/studio/generate">生成</RouterLink>
           </div>
         </article>
       </div>
@@ -349,11 +330,10 @@ function routeStatus(group: Group): string {
     <section v-if="authStore.isAuthenticated && blockedGroups.length > 0" class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Blocked Groups</p>
-          <h2>Visible to your account, but not ready to generate</h2>
+          <p class="eyebrow">不可用分组</p>
+          <h2>当前可见但不能生成</h2>
           <p class="copy">
-            These groups exist for your account, but they cannot handle direct image generation yet. Keeping them
-            listed here makes the difference between usable and blocked routes explicit.
+            这些分组对账号可见，但暂时不能处理图片生成。
           </p>
         </div>
       </div>
@@ -381,21 +361,18 @@ function routeStatus(group: Group): string {
 
 <style scoped>
 .pricing-shell {
-  --paper: #f6f0e4;
-  --panel: rgba(255, 252, 247, 0.8);
-  --card: rgba(255, 255, 255, 0.76);
+  --paper: #f6f7f5;
+  --panel: #ffffff;
+  --card: #ffffff;
   --ink: #12271f;
   --muted: rgba(18, 39, 31, 0.7);
   --line: rgba(18, 39, 31, 0.12);
-  --accent: #0f7a6d;
+  --accent: #0f766e;
   --accent-soft: #d8f0e8;
-  --accent-strong: #08574f;
+  --accent-strong: #0b5f59;
   min-height: 100vh;
-  padding: 40px 24px 72px;
-  background:
-    radial-gradient(circle at top left, rgba(15, 122, 109, 0.15), transparent 30rem),
-    radial-gradient(circle at right center, rgba(224, 157, 83, 0.18), transparent 26rem),
-    linear-gradient(180deg, #fcf8f1 0%, var(--paper) 100%);
+  padding: 24px 24px 56px;
+  background: linear-gradient(180deg, #fbfcfb 0%, var(--paper) 100%);
   color: var(--ink);
   font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
 }
@@ -410,7 +387,7 @@ function routeStatus(group: Group): string {
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.8fr);
-  gap: 20px;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -419,36 +396,33 @@ function routeStatus(group: Group): string {
 .note-card,
 .panel {
   border: 1px solid var(--line);
-  border-radius: 28px;
+  border-radius: 8px;
   background: var(--panel);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 20px 60px rgba(18, 39, 31, 0.08);
+  box-shadow: 0 12px 32px rgba(18, 39, 31, 0.06);
 }
 
 .hero-copy,
 .hero-panel,
 .panel,
 .note-card {
-  padding: 28px;
+  padding: 18px;
 }
 
 .eyebrow {
-  margin: 0 0 12px;
-  font-size: 0.78rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--accent-strong);
 }
 
 .hero-copy h1,
 .panel-header h2 {
   margin: 0;
-  line-height: 0.94;
-  letter-spacing: -0.05em;
+  line-height: 1.18;
 }
 
 .hero-copy h1 {
-  font-size: clamp(2.5rem, 5vw, 4.2rem);
+  font-size: 1.65rem;
 }
 
 .lead,
@@ -460,9 +434,10 @@ function routeStatus(group: Group): string {
 }
 
 .lead {
-  margin: 18px 0 0;
+  margin: 8px 0 0;
   max-width: 42rem;
-  line-height: 1.74;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .hero-actions,
@@ -485,7 +460,7 @@ function routeStatus(group: Group): string {
   justify-content: center;
   min-height: 46px;
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: 8px;
   text-decoration: none;
   font: inherit;
   font-weight: 700;
@@ -495,9 +470,9 @@ function routeStatus(group: Group): string {
 
 .primary-button {
   border: none;
-  background: linear-gradient(135deg, var(--accent) 0%, #16a08e 100%);
+  background: var(--accent);
   color: #f8fffd;
-  box-shadow: 0 18px 34px rgba(15, 122, 109, 0.22);
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.18);
   cursor: pointer;
 }
 
@@ -530,7 +505,7 @@ function routeStatus(group: Group): string {
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -548,19 +523,20 @@ function routeStatus(group: Group): string {
 
 .panel-stats {
   display: grid;
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   margin: 16px 0 0;
 }
 
 .panel-stats div {
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(18, 39, 31, 0.03);
 }
 
 .panel-stats dt {
   font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: rgba(18, 39, 31, 0.55);
 }
 
@@ -590,7 +566,7 @@ function routeStatus(group: Group): string {
 }
 
 .panel {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .panel-header {
@@ -601,19 +577,20 @@ function routeStatus(group: Group): string {
 }
 
 .panel-header h2 {
-  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-size: 1.35rem;
 }
 
 .copy {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   max-width: 46rem;
-  line-height: 1.72;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .alert-box {
   margin-top: 18px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: rgba(163, 42, 42, 0.1);
   color: #7b251e;
 }
@@ -633,7 +610,7 @@ function routeStatus(group: Group): string {
 .blocked-card,
 .empty-state {
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 8px;
   background: var(--card);
 }
 
@@ -684,7 +661,7 @@ function routeStatus(group: Group): string {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border-radius: 20px;
+  border-radius: 8px;
   background: rgba(18, 39, 31, 0.04);
 }
 

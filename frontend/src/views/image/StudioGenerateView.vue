@@ -560,11 +560,33 @@ onUnmounted(() => {
         <div class="card-heading">
           <div>
             <p class="eyebrow">图片生成</p>
-            <h1>输入提示词</h1>
+            <h1>生成图片</h1>
           </div>
           <button type="button" class="secondary-button compact-button" @click="copyCurrentStudioLink">
             复制配置链接
           </button>
+        </div>
+
+        <div class="field-block">
+          <div class="field-label-row key-label-row">
+            <label class="field-label">API Key</label>
+            <a class="inline-link" :href="mainSiteKeysURL">配置 API Key</a>
+          </div>
+          <Select
+            v-model="selectedApiKeyId"
+            :options="keySelectOptions"
+            :disabled="keysLoading || keySelectOptions.length === 0"
+            :searchable="keySelectOptions.length > 8"
+            placeholder="选择可用的图片 Key"
+            search-placeholder="搜索 Key 或分组"
+          />
+          <p v-if="selectedKey" class="field-note">
+            当前路线：{{ selectedGroupLabel }} / {{ selectedKey.name }}
+          </p>
+          <p v-else-if="keysLoading" class="field-note">正在加载 API Key...</p>
+          <p v-else class="field-note">
+            请先到主站创建用户 API Key，并绑定 Gemini 或 Antigravity 图片分组。
+          </p>
         </div>
 
         <div class="compact-stats">
@@ -584,23 +606,6 @@ onUnmounted(() => {
             <span>可用 Key</span>
             <strong>{{ availableKeys.length }}</strong>
           </div>
-        </div>
-
-        <div class="field-block">
-          <label class="field-label">API Key</label>
-          <Select
-            v-model="selectedApiKeyId"
-            :options="keySelectOptions"
-            :disabled="keysLoading || keySelectOptions.length === 0"
-            :searchable="keySelectOptions.length > 8"
-            placeholder="选择可用的图片 Key"
-            search-placeholder="搜索 Key 或分组"
-          />
-          <p v-if="selectedKey" class="field-note">
-            当前路线：{{ selectedGroupLabel }} / {{ selectedKey.name }}
-          </p>
-          <p v-else-if="keysLoading" class="field-note">正在加载 API Key...</p>
-          <p v-else class="field-note">请选择一个可用于图片生成的 Key。</p>
         </div>
 
         <div class="control-grid">
@@ -689,6 +694,9 @@ onUnmounted(() => {
           <button class="secondary-button" type="button" :disabled="keysLoading" @click="loadKeys">
             刷新 Key
           </button>
+          <a class="secondary-button config-key-button" :href="mainSiteKeysURL">
+            配置 API Key
+          </a>
         </div>
       </form>
 
@@ -870,6 +878,10 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.field-block + .compact-stats {
+  margin-top: 16px;
+}
+
 .compact-stats div {
   min-width: 0;
   padding: 10px 12px;
@@ -916,11 +928,19 @@ onUnmounted(() => {
   gap: 12px;
 }
 
+.key-label-row {
+  margin-bottom: 8px;
+}
+
 .field-label {
   display: block;
   margin-bottom: 8px;
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.key-label-row .field-label {
+  margin-bottom: 0;
 }
 
 .field-tag {
@@ -1077,6 +1097,10 @@ onUnmounted(() => {
 
 .secondary-button {
   min-width: 120px;
+}
+
+.config-key-button {
+  text-decoration: none;
 }
 
 .compact-button {
