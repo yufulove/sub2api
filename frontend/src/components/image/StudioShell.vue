@@ -25,29 +25,29 @@ const authStore = useAuthStore()
 const imageStudioStore = useImageStudioStore()
 
 const navItems: StudioNavItem[] = [
-  { path: '/studio/generate', label: 'Generate' },
-  { path: '/studio/history', label: 'History' },
-  { path: '/studio/pricing', label: 'Pricing' },
-  { path: '/studio', label: 'Overview' }
+  { path: '/studio/generate', label: '生成' },
+  { path: '/studio/history', label: '历史' },
+  { path: '/studio/pricing', label: '价格' },
+  { path: '/studio', label: '概览' }
 ]
 
 const brandName = computed(() => appStore.siteName || 'FionaAI')
 const sessionLabel = computed(() => {
   if (!authStore.isAuthenticated) {
-    return 'Sign in to restore cards'
+    return '登录后恢复'
   }
   if (imageStudioStore.isHydrating) {
-    return 'Restoring session'
+    return '恢复中'
   }
   const count = imageStudioStore.sessionGenerations.length
   if (count === 0) {
-    return 'No recent renders'
+    return '暂无图片'
   }
-  return `${count} saved card${count === 1 ? '' : 's'}`
+  return `${count} 张图片`
 })
 const walletLabel = computed(() => {
   if (!authStore.isAuthenticated) {
-    return 'Shared after sign-in'
+    return '登录后显示'
   }
   return formatWalletMoneyFromInternal(authStore.user?.balance ?? 0, appStore.cachedPublicSettings)
 })
@@ -60,7 +60,7 @@ const mainSiteURL = computed(() =>
   )
 )
 const mainSiteLabel = computed(() =>
-  authStore.isAuthenticated ? 'Main dashboard' : 'Main site'
+  authStore.isAuthenticated ? '主站工作台' : '返回主站'
 )
 
 function isActive(path: string): boolean {
@@ -73,24 +73,24 @@ function isActive(path: string): boolean {
     <div class="studio-shell-card">
       <div class="brand-cluster">
         <RouterLink to="/studio" class="brand-lockup">
-          <span class="brand-mark">IS</span>
+          <span class="brand-mark">图</span>
           <div>
-            <p class="brand-kicker">Image Workspace</p>
+            <p class="brand-kicker">图片工作台</p>
             <strong>{{ brandName }} Studio</strong>
           </div>
         </RouterLink>
         <p class="brand-note">
-          Start generation here. Wallet, login, and key management stay shared with the main site.
+          独立处理图片生成，登录、钱包和 API Key 继续沿用主站账号体系。
         </p>
       </div>
 
       <div class="meta-cluster">
         <div class="meta-pill">
-          <span>Session</span>
+          <span>会话</span>
           <strong>{{ sessionLabel }}</strong>
         </div>
         <div class="meta-pill">
-          <span>Wallet</span>
+          <span>余额</span>
           <strong>{{ walletLabel }}</strong>
         </div>
         <a :href="mainSiteURL" class="main-site-link">
@@ -115,105 +115,102 @@ function isActive(path: string): boolean {
 <style scoped>
 .studio-shell-header {
   width: min(var(--studio-shell-max-width), 100%);
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
 }
 
 .studio-shell-card,
 .studio-nav {
   border: 1px solid rgba(18, 35, 30, 0.12);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 20px 60px rgba(18, 35, 30, 0.07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(18, 35, 30, 0.06);
 }
 
 .studio-shell-card {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 20px 22px;
+  gap: 16px;
+  padding: 14px 16px;
 }
 
 .brand-cluster {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
 }
 
 .brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   color: inherit;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(198, 92, 44, 0.94) 0%, rgba(218, 124, 67, 0.94) 100%);
-  color: #fffaf5;
-  font-size: 0.94rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 1rem;
   font-weight: 800;
-  letter-spacing: 0.18em;
-  box-shadow: 0 14px 28px rgba(198, 92, 44, 0.22);
 }
 
 .brand-kicker {
-  margin: 0 0 6px;
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  margin: 0 0 4px;
+  font-size: 0.78rem;
   color: rgba(18, 35, 30, 0.54);
 }
 
 .brand-lockup strong {
-  font-size: 1.15rem;
-  letter-spacing: -0.03em;
+  font-size: 1rem;
 }
 
 .brand-note {
   margin: 0;
-  max-width: 40rem;
+  max-width: 36rem;
   color: rgba(18, 35, 30, 0.72);
-  line-height: 1.58;
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 .meta-cluster {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .meta-pill,
 .main-site-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 0 16px;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
   border: 1px solid rgba(18, 35, 30, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.76);
+  border-radius: 8px;
+  background: #ffffff;
   color: inherit;
   text-decoration: none;
 }
 
 .meta-pill span {
   font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
   color: rgba(18, 35, 30, 0.52);
 }
 
 .meta-pill strong,
 .main-site-link {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -229,34 +226,40 @@ function isActive(path: string): boolean {
 .studio-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
-  padding: 10px;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px;
 }
 
 .nav-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 999px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
   color: rgba(18, 35, 30, 0.78);
   font-weight: 700;
+  font-size: 0.92rem;
   text-decoration: none;
   transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 .nav-pill-active {
-  background: linear-gradient(135deg, rgba(18, 35, 30, 0.94) 0%, rgba(34, 71, 58, 0.94) 100%);
-  color: #fbf7f1;
-  box-shadow: 0 14px 28px rgba(18, 35, 30, 0.18);
+  background: #12352d;
+  color: #ffffff;
 }
 
 @media (max-width: 900px) {
   .studio-shell-card {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .brand-cluster {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .meta-cluster {
@@ -269,17 +272,12 @@ function isActive(path: string): boolean {
     margin-bottom: 16px;
   }
 
-  .studio-shell-card,
-  .studio-nav {
-    border-radius: 24px;
-  }
-
   .studio-shell-card {
-    padding: 18px;
+    padding: 14px;
   }
 
   .studio-nav {
-    padding: 8px;
+    padding: 6px;
   }
 
   .nav-pill,
