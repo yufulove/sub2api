@@ -8,6 +8,7 @@ import (
 )
 
 var openAIOAuthCodexCompatibleModelIDs = []string{
+	"gpt-5.5",
 	"gpt-5.4",
 	"gpt-5.4-mini",
 	"gpt-5.3-codex",
@@ -70,6 +71,40 @@ func OpenAIOAuthCodexCompatibleModels() []openaipkg.Model {
 			models = append(models, model)
 		}
 	}
+	return models
+}
+
+func mergeOpenAIOAuthCodexCompatibleModels(base []openaipkg.Model, discovered []openaipkg.Model) []openaipkg.Model {
+	models := make([]openaipkg.Model, 0, len(base)+len(discovered))
+	indexByID := make(map[string]int, len(base)+len(discovered))
+
+	for _, model := range base {
+		id := strings.TrimSpace(model.ID)
+		if id == "" {
+			continue
+		}
+		key := strings.ToLower(id)
+		if _, exists := indexByID[key]; exists {
+			continue
+		}
+		indexByID[key] = len(models)
+		models = append(models, model)
+	}
+
+	for _, model := range discovered {
+		id := strings.TrimSpace(model.ID)
+		if id == "" {
+			continue
+		}
+		key := strings.ToLower(id)
+		if index, exists := indexByID[key]; exists {
+			models[index] = model
+			continue
+		}
+		indexByID[key] = len(models)
+		models = append(models, model)
+	}
+
 	return models
 }
 

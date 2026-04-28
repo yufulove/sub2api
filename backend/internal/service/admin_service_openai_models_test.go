@@ -48,6 +48,7 @@ func TestParseOpenAIAvailableModels_PreservesUnknownQueriedOpenAIIDs(t *testing.
 
 func TestFilterOpenAIOAuthCodexCompatibleModels_RejectsUnsupportedCatalogModels(t *testing.T) {
 	models := filterOpenAIOAuthCodexCompatibleModels([]openaipkg.Model{
+		{ID: "gpt-5.5", DisplayName: "GPT-5.5"},
 		{ID: "gpt-5", DisplayName: "GPT-5"},
 		{ID: "gpt-5-mini", DisplayName: "GPT-5 Mini"},
 		{ID: "o3", DisplayName: "OpenAI o3"},
@@ -55,10 +56,31 @@ func TestFilterOpenAIOAuthCodexCompatibleModels_RejectsUnsupportedCatalogModels(
 		{ID: "gpt-image-2", DisplayName: "GPT Image 2"},
 	})
 
-	require.Len(t, models, 3)
+	require.Len(t, models, 4)
 	require.Equal(t, "gpt-5.4", models[0].ID)
 	require.Equal(t, "gpt-5.4-mini", models[1].ID)
-	require.Equal(t, "gpt-image-2", models[2].ID)
+	require.Equal(t, "gpt-5.5", models[2].ID)
+	require.Equal(t, "gpt-image-2", models[3].ID)
+}
+
+func TestMergeOpenAIOAuthCodexCompatibleModels_PreservesCuratedFallback(t *testing.T) {
+	models := mergeOpenAIOAuthCodexCompatibleModels(OpenAIOAuthCodexCompatibleModels(), []openaipkg.Model{
+		{ID: "gpt-5.4", DisplayName: "GPT-5.4 discovered"},
+		{ID: "gpt-5.4-mini", DisplayName: "GPT-5.4 Mini discovered"},
+	})
+
+	var ids []string
+	for _, model := range models {
+		ids = append(ids, model.ID)
+	}
+
+	require.Contains(t, ids, "gpt-5.5")
+	require.Contains(t, ids, "gpt-5.4")
+	require.Contains(t, ids, "gpt-5.4-mini")
+	require.Contains(t, ids, "gpt-image-1")
+	require.Contains(t, ids, "gpt-image-1.5")
+	require.Contains(t, ids, "gpt-image-2")
+	require.Equal(t, "GPT-5.4 discovered", models[1].DisplayName)
 }
 
 func TestResolveOpenAIOAuthCodexTestModel_NormalizesSupportedAliases(t *testing.T) {
@@ -90,6 +112,7 @@ func TestOpenAIOAuthCodexCompatibleModels_ExcludeUnsupportedSparkVariant(t *test
 
 	require.Contains(t, ids, "gpt-5.4")
 	require.Contains(t, ids, "gpt-5.4-mini")
+	require.Contains(t, ids, "gpt-5.5")
 	require.Contains(t, ids, "gpt-5.3-codex")
 	require.Contains(t, ids, "gpt-5.2")
 	require.NotContains(t, ids, "gpt-5.3-codex-spark")
