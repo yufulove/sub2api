@@ -145,13 +145,6 @@ export function resolveImageSiteURL(path = '/studio'): string {
   const configuredHost = splitConfiguredHosts(import.meta.env.VITE_IMAGE_SITE_HOSTS)[0]
   if (configuredHost) {
     current.hostname = configuredHost
-  } else {
-    const segments = current.hostname.split('.').filter((segment) => segment.length > 0)
-    if (segments.length > 1) {
-      if (!IMAGE_SUBDOMAIN_PREFIXES.includes(segments[0])) {
-        current.hostname = `${IMAGE_SUBDOMAIN_PREFIXES[0]}.${current.hostname}`
-      }
-    }
   }
   current.pathname = normalizedPath.pathname
   current.search = normalizedPath.search
