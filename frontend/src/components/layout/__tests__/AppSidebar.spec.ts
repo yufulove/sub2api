@@ -30,3 +30,14 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar image studio entry', () => {
+  it('keeps image generation reachable from account navigation', () => {
+    expect(componentSource).toContain(
+      "{ path: '/studio/generate', label: t('nav.imageStudio'), icon: ImageIcon }"
+    )
+    expect(componentSource).toContain(
+      "filtered.push({ path: '/studio/generate', label: t('nav.imageStudio'), icon: ImageIcon })"
+    )
+  })
+})

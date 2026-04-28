@@ -4,6 +4,23 @@
       <template #filters>
         <div class="flex flex-col gap-3">
           <div class="flex flex-wrap items-center gap-3">
+            <div
+              v-if="isFromImageStudio"
+              class="flex w-full flex-col gap-3 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-100 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p class="font-semibold">{{ t('keys.imageStudioReturnTitle') }}</p>
+                <p class="mt-1 text-primary-700 dark:text-primary-200">
+                  {{ t('keys.imageStudioReturnDescription') }}
+                </p>
+              </div>
+              <router-link
+                :to="imageStudioReturnPath"
+                class="btn btn-primary shrink-0 justify-center"
+              >
+                {{ t('keys.returnToImageStudio') }}
+              </router-link>
+            </div>
             <SearchInput
               v-model="filterSearch"
               :placeholder="t('keys.searchPlaceholder')"
@@ -33,6 +50,9 @@
 
       <template #actions>
         <div class="flex justify-end gap-3">
+        <router-link to="/studio/generate" class="btn btn-secondary whitespace-nowrap">
+          {{ t('keys.openImageStudio') }}
+        </router-link>
         <button
           @click="loadApiKeys"
           :disabled="loading"
@@ -1047,6 +1067,7 @@
 
 <script setup lang="ts">
 	import { ref, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
+import { useRoute } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
@@ -1054,6 +1075,7 @@
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
+const route = useRoute()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -1095,6 +1117,17 @@ interface GroupOption {
 const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
+
+const isFromImageStudio = computed(() => route.query.from === 'studio')
+const imageStudioReturnPath = computed(() => {
+  const rawReturnPath = Array.isArray(route.query.return)
+    ? route.query.return[0]
+    : route.query.return
+
+  return typeof rawReturnPath === 'string' && rawReturnPath.startsWith('/studio')
+    ? rawReturnPath
+    : '/studio/generate'
+})
 
 const columns = computed<Column[]>(() => [
   { key: 'name', label: t('common.name'), sortable: true },

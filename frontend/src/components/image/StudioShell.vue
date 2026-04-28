@@ -58,7 +58,9 @@ const mainSiteURL = computed(() =>
     })
   )
 )
-const mainSiteKeysURL = computed(() => resolveMainSiteURL('/keys'))
+const mainSiteKeysURL = computed(() =>
+  resolveMainSiteURL('/keys?from=studio&return=%2Fstudio%2Fgenerate')
+)
 const mainSiteLabel = computed(() =>
   authStore.isAuthenticated ? '主站工作台' : '返回主站'
 )

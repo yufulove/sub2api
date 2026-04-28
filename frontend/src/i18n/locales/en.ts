@@ -346,6 +346,7 @@ export default {
     dashboard: 'Dashboard',
     announcements: 'Announcements',
     apiKeys: 'API Keys',
+    imageStudio: 'Image Studio',
     usage: 'Usage',
     redeem: 'Redeem',
     affiliate: 'Affiliate Rebates',
@@ -654,6 +655,10 @@ export default {
     title: 'API Keys',
     description: 'Manage your API keys and access tokens',
     searchPlaceholder: 'Search name or key...',
+    openImageStudio: 'Image Studio',
+    imageStudioReturnTitle: 'Image generation API key setup',
+    imageStudioReturnDescription: 'After binding a Gemini or Antigravity image group, return to the image workspace to keep generating.',
+    returnToImageStudio: 'Return to Image Studio',
     endpoints: {
       title: 'API Endpoints',
       default: 'Default',

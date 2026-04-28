@@ -346,6 +346,7 @@ export default {
     dashboard: '仪表盘',
     announcements: '公告',
     apiKeys: 'API 密钥',
+    imageStudio: '图片生成',
     usage: '使用记录',
     redeem: '兑换',
     affiliate: '邀请返利',
@@ -653,6 +654,10 @@ export default {
     title: 'API 密钥',
     description: '管理您的 API 密钥和访问令牌',
     searchPlaceholder: '搜索名称或Key...',
+    openImageStudio: '图片生成',
+    imageStudioReturnTitle: '图片生成 API Key 配置',
+    imageStudioReturnDescription: '绑定 Gemini 或 Antigravity 图片分组后，可以直接回到图片工作台继续生成。',
+    returnToImageStudio: '返回图片生成',
     endpoints: {
       title: 'API 端点',
       default: '默认',

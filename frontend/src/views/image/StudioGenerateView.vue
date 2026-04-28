@@ -128,7 +128,9 @@ const { copyToClipboard } = useClipboard()
 const walletBalance = computed(() =>
   formatWalletMoneyFromInternal(authStore.user?.balance ?? 0, appStore.cachedPublicSettings)
 )
-const mainSiteKeysURL = computed(() => resolveMainSiteURL('/keys'))
+const mainSiteKeysURL = computed(() =>
+  resolveMainSiteURL('/keys?from=studio&return=%2Fstudio%2Fgenerate')
+)
 const mainSiteUsageURL = computed(() => resolveMainSiteURL('/usage'))
 
 const apiKeys = ref<ApiKey[]>([])
