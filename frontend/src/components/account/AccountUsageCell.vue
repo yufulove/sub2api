@@ -469,6 +469,7 @@ const props = withDefaults(
 
 const { t } = useI18n()
 const desktopViewportQuery = '(min-width: 768px)'
+const canUseMatchMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
 
 const unmounted = ref(false)
 onBeforeUnmount(() => { unmounted.value = true })
@@ -479,7 +480,7 @@ const error = ref<string | null>(null)
 const usageInfo = ref<AccountUsageInfo | null>(null)
 const rootRef = ref<HTMLElement | null>(null)
 const isDesktopViewport = ref(
-  typeof window === 'undefined' ? true : window.matchMedia(desktopViewportQuery).matches
+  canUseMatchMedia ? window.matchMedia(desktopViewportQuery).matches : true
 )
 const hasEnteredViewport = ref(false)
 const pendingAutoLoad = ref(false)
@@ -966,7 +967,10 @@ const loadUsage = async (options?: { source?: 'passive' | 'active'; bypassCache?
   error.value = null
 
   try {
-    const fetchFn = () => adminAPI.accounts.getUsage(props.account.id, options?.source)
+    const source = options?.source
+    const fetchFn = () => source
+      ? adminAPI.accounts.getUsage(props.account.id, source)
+      : adminAPI.accounts.getUsage(props.account.id)
     const result = await enqueueUsageRequest(props.account, fetchFn)
     if (!unmounted.value) {
       usageInfo.value = result
@@ -1131,7 +1135,7 @@ const formatKeyUserCost = computed(() => {
 })
 
 onMounted(() => {
-  if (typeof window !== 'undefined') {
+  if (canUseMatchMedia) {
     desktopViewportMediaQuery = window.matchMedia(desktopViewportQuery)
     isDesktopViewport.value = desktopViewportMediaQuery.matches
     desktopViewportListener = (event: MediaQueryListEvent) => {
@@ -1153,6 +1157,7 @@ watch(openAIUsageRefreshKey, (nextKey, prevKey) => {
   if (!prevKey || nextKey === prevKey) return
   if (props.account.platform !== 'openai' || props.account.type !== 'oauth') return
 
+  _usageCache.delete(props.account.id)
   requestAutoLoad()
 })
 

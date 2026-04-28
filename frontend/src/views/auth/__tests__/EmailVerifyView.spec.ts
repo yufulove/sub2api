@@ -112,6 +112,7 @@ describe('EmailVerifyView', () => {
     apiClientPostMock.mockReset()
     authStoreState.pendingAuthSession = null
     sessionStorage.clear()
+    localStorage.clear()
 
     getPublicSettingsMock.mockResolvedValue({
       turnstile_enabled: false,
@@ -136,6 +137,7 @@ describe('EmailVerifyView', () => {
       JSON.stringify({
         email: 'fresh@example.com',
         password: 'secret-123',
+        aff_code: 'AFF123',
       })
     )
 

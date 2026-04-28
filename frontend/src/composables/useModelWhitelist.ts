@@ -4,21 +4,15 @@
 
 // OpenAI
 const openaiModels = [
+  // GPT-5.2 系列
   'gpt-5.2', 'gpt-5.2-2025-12-11', 'gpt-5.2-chat-latest',
   'gpt-5.2-pro', 'gpt-5.2-pro-2025-12-11',
   // GPT-5.5 系列
   'gpt-5.5',
   // GPT-5.4 系列
+  'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-2026-03-05',
+  // GPT-5.3 系列
   'gpt-5.3-codex', 'gpt-5.3-codex-spark',
-  'gpt-5.4',
-  'gpt-5.2-codex',
-  'gpt-5.1-codex-max',
-  'gpt-5.1-codex',
-  'gpt-5.1',
-  'gpt-5.1-codex-mini',
-  // GPT-5 系列（同步后端定价文件）
-  'gpt-5',
-  'chatgpt-4o-latest',
   'gpt-4o-audio-preview', 'gpt-4o-realtime-preview',
   // GPT Image 系列
   'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2'
@@ -26,15 +20,24 @@ const openaiModels = [
 
 // Anthropic Claude
 export const claudeModels = [
+  'claude-3-5-sonnet-20241022', 'claude-3-5-sonnet-20240620',
+  'claude-3-5-haiku-20241022',
+  'claude-3-7-sonnet-20250219',
+  'claude-sonnet-4-20250514', 'claude-opus-4-20250514',
+  'claude-opus-4-1-20250805',
+  'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001',
   'claude-opus-4-5-20251101',
   'claude-opus-4-6',
-  'claude-sonnet-4-6',
-  'claude-sonnet-4-5-20250929',
-  'claude-haiku-4-5-20251001'
+  'claude-opus-4-7',
+  'claude-sonnet-4-6'
 ]
 
 // Google Gemini
 const geminiModels = [
+  // Keep in sync with backend curated Gemini lists.
+  // This list is intentionally conservative (models commonly available across OAuth/API key).
+  'gemini-3.1-flash-image',
+  'gemini-2.5-flash-image',
   'gemini-2.0-flash',
   'gemini-2.5-flash',
   'gemini-2.5-pro',
@@ -65,11 +68,14 @@ const antigravityModels = [
   // Claude 4.5+ 系列
   'claude-opus-4-6',
   'claude-opus-4-6-thinking',
+  'claude-opus-4-7',
   'claude-opus-4-5-thinking',
   'claude-sonnet-4-6',
   'claude-sonnet-4-5',
   'claude-sonnet-4-5-thinking',
   // Gemini 2.5 系列
+  'gemini-3.1-flash-image',
+  'gemini-2.5-flash-image',
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash-thinking',
@@ -81,7 +87,6 @@ const antigravityModels = [
   // Gemini 3.1 系列
   'gemini-3.1-pro-high',
   'gemini-3.1-pro-low',
-  'gemini-3.1-flash-image',
   'gemini-3-pro-image',
   // 其他
   'gpt-oss-120b-medium',
@@ -292,7 +297,9 @@ const openaiCuratedPresetMappings = [
 const geminiPresetMappings = [
   { label: 'Flash 2.0', from: 'gemini-2.0-flash', to: 'gemini-2.0-flash', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400' },
   { label: '2.5 Flash', from: 'gemini-2.5-flash', to: 'gemini-2.5-flash', color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' },
-  { label: '2.5 Pro', from: 'gemini-2.5-pro', to: 'gemini-2.5-pro', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' }
+  { label: '2.5 Image', from: 'gemini-2.5-flash-image', to: 'gemini-2.5-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
+  { label: '2.5 Pro', from: 'gemini-2.5-pro', to: 'gemini-2.5-pro', color: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
+  { label: '3.1 Image', from: 'gemini-3.1-flash-image', to: 'gemini-3.1-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' }
 ]
 
 // Antigravity 预设映射（支持通配符）
@@ -315,13 +322,17 @@ const antigravityPresetMappings = [
   // Gemini 通配符映射
   { label: 'Gemini 3→Flash', from: 'gemini-3*', to: 'gemini-3-flash', color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400' },
   { label: 'Gemini 2.5→Flash', from: 'gemini-2.5*', to: 'gemini-2.5-flash', color: 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400' },
+  { label: '2.5-Flash-Image透传', from: 'gemini-2.5-flash-image', to: 'gemini-2.5-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
+  { label: '3.1-Flash-Image透传', from: 'gemini-3.1-flash-image', to: 'gemini-3.1-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
+  { label: '3-Pro-Image→3.1', from: 'gemini-3-pro-image', to: 'gemini-3.1-flash-image', color: 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400' },
   { label: '3-Flash透传', from: 'gemini-3-flash', to: 'gemini-3-flash', color: 'bg-lime-100 text-lime-700 hover:bg-lime-200 dark:bg-lime-900/30 dark:text-lime-400' },
   { label: '2.5-Flash-Lite透传', from: 'gemini-2.5-flash-lite', to: 'gemini-2.5-flash-lite', color: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' },
   // 精确映射
   { label: 'Sonnet 4.6', from: 'claude-sonnet-4-6', to: 'claude-sonnet-4-6', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
   { label: 'Sonnet 4.5', from: 'claude-sonnet-4-5', to: 'claude-sonnet-4-5', color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400' },
   { label: 'Opus 4.6', from: 'claude-opus-4-6', to: 'claude-opus-4-6-thinking', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' },
-  { label: 'Opus 4.6-thinking', from: 'claude-opus-4-6-thinking', to: 'claude-opus-4-6-thinking', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' }
+  { label: 'Opus 4.6-thinking', from: 'claude-opus-4-6-thinking', to: 'claude-opus-4-6-thinking', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' },
+  { label: 'Opus 4.7', from: 'claude-opus-4-7', to: 'claude-opus-4-7', color: 'bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-400' }
 ]
 
 // Antigravity 默认映射（从后端 API 获取，与 constants.go 保持一致）
