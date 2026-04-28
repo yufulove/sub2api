@@ -58,12 +58,16 @@ const mainSiteURL = computed(() =>
     })
   )
 )
-const mainSiteKeysURL = computed(() =>
-  resolveMainSiteURL('/keys?from=studio&return=%2Fstudio%2Fgenerate')
-)
 const mainSiteLabel = computed(() =>
   authStore.isAuthenticated ? '主站工作台' : '返回主站'
 )
+const keySetupRoute = computed(() => ({
+  path: '/studio/generate',
+  query:
+    route.path === '/studio/generate'
+      ? { ...route.query, configure: 'key' }
+      : { configure: 'key' }
+}))
 
 function isActive(path: string): boolean {
   return route.path === path || (path !== '/studio' && route.path.startsWith(`${path}/`))
@@ -101,9 +105,12 @@ function isActive(path: string): boolean {
           <span>余额</span>
           <strong>{{ walletLabel }}</strong>
         </div>
-        <a :href="mainSiteKeysURL" class="main-site-link main-site-link-primary">
+        <RouterLink
+          :to="keySetupRoute"
+          class="main-site-link main-site-link-primary"
+        >
           配置 API Key
-        </a>
+        </RouterLink>
         <a :href="mainSiteURL" class="main-site-link">
           {{ mainSiteLabel }}
         </a>

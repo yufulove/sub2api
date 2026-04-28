@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { keysAPI } from '@/api'
+import { keysAPI, userGroupsAPI } from '@/api'
 import { generateImage } from '@/api/image'
 import StudioShell from '@/components/image/StudioShell.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { useAppStore, useAuthStore, useImageStudioStore } from '@/stores'
 import type { StudioSessionGeneration } from '@/stores/imageStudio'
-import type { ApiKey } from '@/types'
+import type { ApiKey, Group } from '@/types'
 import {
   buildComposerPresetQuery,
   IMAGE_STUDIO_MODEL_STORAGE_KEY,
@@ -23,6 +24,7 @@ import { resolveMainSiteURL } from '@/utils/siteMode'
 import { formatWalletMoneyFromInternal } from '@/utils/walletDisplay'
 
 type SizeTier = '1K' | '2K' | '4K'
+type KeySetupMode = 'existing' | 'new'
 
 interface ImageModelOption {
   value: string
@@ -128,16 +130,26 @@ const { copyToClipboard } = useClipboard()
 const walletBalance = computed(() =>
   formatWalletMoneyFromInternal(authStore.user?.balance ?? 0, appStore.cachedPublicSettings)
 )
-const mainSiteKeysURL = computed(() =>
+const advancedKeyManagementURL = computed(() =>
   resolveMainSiteURL('/keys?from=studio&return=%2Fstudio%2Fgenerate')
 )
+const adminAccountsURL = computed(() => resolveMainSiteURL('/admin/accounts'))
 const mainSiteUsageURL = computed(() => resolveMainSiteURL('/usage'))
 
 const apiKeys = ref<ApiKey[]>([])
+const availableGroups = ref<Group[]>([])
 const keysLoading = ref(false)
+const groupsLoading = ref(false)
 const keysErrorMessage = ref('')
 const generateErrorMessage = ref('')
+const keySetupErrorMessage = ref('')
 const selectedApiKeyId = ref<number | null>(null)
+const showKeySetupDialog = ref(false)
+const keySetupMode = ref<KeySetupMode>('existing')
+const setupKeyId = ref<number | null>(null)
+const setupGroupId = ref<number | null>(null)
+const setupKeyName = ref('图片生成')
+const keySetupSubmitting = ref(false)
 const selectedModel = ref(
   readStoredChoice(
     IMAGE_STUDIO_MODEL_STORAGE_KEY,
@@ -162,6 +174,9 @@ let storedKeyCandidate = readStoredKeyId()
 const selectedKey = computed(() =>
   apiKeys.value.find((key) => key.id === selectedApiKeyId.value) ?? null
 )
+const selectedSetupKey = computed(() =>
+  apiKeys.value.find((key) => key.id === setupKeyId.value) ?? null
+)
 
 const generationCards = computed(() => imageStudioStore.sessionGenerations)
 const isSessionHydrating = computed(() => imageStudioStore.isHydrating)
@@ -173,11 +188,30 @@ const selectedSizeOption = computed(() =>
 const availableKeys = computed(() =>
   apiKeys.value.filter((key) => getKeyAvailability(key).usable)
 )
+const imageGroups = computed(() =>
+  availableGroups.value.filter(
+    (group) =>
+      group.status === 'active' &&
+      (group.platform === 'gemini' || group.platform === 'antigravity')
+  )
+)
 
 const unavailableKeyReasons = computed(() =>
   apiKeys.value
     .map((key) => ({ key, availability: getKeyAvailability(key) }))
     .filter((item) => !item.availability.usable)
+)
+const setupKeyOptions = computed<SelectOption[]>(() =>
+  apiKeys.value.map((key) => ({
+    value: key.id,
+    label: `${key.name} / ${key.group?.name || '未绑定分组'}${key.status === 'active' ? '' : ` / ${statusLabel(key.status)}`}`
+  }))
+)
+const imageGroupOptions = computed<SelectOption[]>(() =>
+  imageGroups.value.map((group) => ({
+    value: group.id,
+    label: `${group.name} / ${platformLabel(group.platform)}`
+  }))
 )
 
 const keySelectOptions = computed<SelectOption[]>(() =>
@@ -245,6 +279,15 @@ const estimatedCostLabel = computed(() => {
 const canGenerate = computed(() =>
   !!selectedKey.value && prompt.value.trim().length > 0 && !isGenerating.value
 )
+const canSubmitKeySetup = computed(() => {
+  if (keySetupSubmitting.value || !setupGroupId.value) {
+    return false
+  }
+  if (keySetupMode.value === 'new') {
+    return setupKeyName.value.trim().length > 0
+  }
+  return setupKeyId.value != null
+})
 
 watch(
   availableKeys,
@@ -293,6 +336,22 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => route.query.configure,
+  (value) => {
+    if (value === 'key') {
+      void openKeySetupDialog()
+    }
+  },
+  { immediate: true }
+)
+
+watch(setupKeyId, () => {
+  if (showKeySetupDialog.value && keySetupMode.value === 'existing') {
+    syncKeySetupDefaults()
+  }
+})
+
 async function loadKeys() {
   keysLoading.value = true
   keysErrorMessage.value = ''
@@ -305,6 +364,85 @@ async function loadKeys() {
     appStore.showError(keysErrorMessage.value)
   } finally {
     keysLoading.value = false
+  }
+}
+
+async function loadGroups() {
+  groupsLoading.value = true
+  keySetupErrorMessage.value = ''
+
+  try {
+    availableGroups.value = await userGroupsAPI.getAvailable()
+  } catch {
+    keySetupErrorMessage.value = '图片分组加载失败，请刷新后重试。'
+    appStore.showError(keySetupErrorMessage.value)
+  } finally {
+    groupsLoading.value = false
+  }
+}
+
+async function openKeySetupDialog() {
+  showKeySetupDialog.value = true
+  keySetupErrorMessage.value = ''
+  keySetupMode.value = apiKeys.value.length > 0 ? 'existing' : 'new'
+  syncKeySetupDefaults()
+
+  await Promise.all([loadKeys(), loadGroups()])
+  keySetupMode.value = apiKeys.value.length > 0 ? 'existing' : 'new'
+  syncKeySetupDefaults()
+}
+
+function closeKeySetupDialog() {
+  showKeySetupDialog.value = false
+  keySetupErrorMessage.value = ''
+
+  if (route.query.configure === 'key') {
+    const nextQuery = { ...route.query }
+    delete nextQuery.configure
+    void router.replace({ path: route.path, query: nextQuery })
+  }
+}
+
+function syncKeySetupDefaults() {
+  if (apiKeys.value.length > 0 && setupKeyId.value == null) {
+    setupKeyId.value = selectedKey.value?.id ?? apiKeys.value[0].id
+  }
+
+  const keyGroupId = selectedSetupKey.value?.group_id ?? null
+  if (keyGroupId && imageGroups.value.some((group) => group.id === keyGroupId)) {
+    setupGroupId.value = keyGroupId
+    return
+  }
+
+  if (!setupGroupId.value || !imageGroups.value.some((group) => group.id === setupGroupId.value)) {
+    setupGroupId.value = imageGroups.value[0]?.id ?? null
+  }
+}
+
+async function handleKeySetupSubmit() {
+  if (!canSubmitKeySetup.value || !setupGroupId.value) {
+    return
+  }
+
+  keySetupSubmitting.value = true
+  keySetupErrorMessage.value = ''
+
+  try {
+    const savedKey =
+      keySetupMode.value === 'new' || setupKeyId.value == null
+        ? await keysAPI.create(setupKeyName.value.trim(), setupGroupId.value)
+        : await keysAPI.update(setupKeyId.value, { group_id: setupGroupId.value })
+
+    await loadKeys()
+    selectedApiKeyId.value = savedKey.id
+    appStore.showSuccess('图片 API Key 配置已保存')
+    closeKeySetupDialog()
+  } catch (error) {
+    const message = getErrorMessage(error, '图片 API Key 配置保存失败。')
+    keySetupErrorMessage.value = message
+    appStore.showError(message)
+  } finally {
+    keySetupSubmitting.value = false
   }
 }
 
@@ -425,8 +563,8 @@ function getKeyAvailability(key: ApiKey): { usable: boolean; reason?: string } {
   if (!key.group_id || !key.group) {
     return { usable: false, reason: '未绑定分组' }
   }
-  if (key.group.platform === 'openai') {
-    return { usable: false, reason: 'OpenAI 图片上游暂未接入' }
+  if (key.group.platform !== 'gemini' && key.group.platform !== 'antigravity') {
+    return { usable: false, reason: '需绑定 Gemini 或 Antigravity 图片分组' }
   }
   return { usable: true }
 }
@@ -482,6 +620,17 @@ function isAbortError(error: unknown): boolean {
   }
   const payload = error as { name?: string; code?: string }
   return payload.name === 'AbortError' || payload.code === 'ERR_CANCELED'
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (!error || typeof error !== 'object') {
+    return fallback
+  }
+  const payload = error as {
+    message?: string
+    response?: { data?: { detail?: string; message?: string } }
+  }
+  return payload.response?.data?.detail || payload.response?.data?.message || payload.message || fallback
 }
 
 function sanitizeFilename(value: string): string {
@@ -572,7 +721,7 @@ onUnmounted(() => {
         <div class="field-block">
           <div class="field-label-row key-label-row">
             <label class="field-label">API Key</label>
-            <a class="inline-link" :href="mainSiteKeysURL">配置 API Key</a>
+            <button class="inline-link" type="button" @click="openKeySetupDialog">配置 API Key</button>
           </div>
           <Select
             v-model="selectedApiKeyId"
@@ -686,7 +835,7 @@ onUnmounted(() => {
               {{ item.key.name }}: {{ item.availability.reason }}
             </li>
           </ul>
-          <a class="inline-link" :href="mainSiteKeysURL">去主站管理 API Key</a>
+          <button class="inline-link" type="button" @click="openKeySetupDialog">配置图片 API Key</button>
         </div>
 
         <div class="submit-row">
@@ -696,9 +845,9 @@ onUnmounted(() => {
           <button class="secondary-button" type="button" :disabled="keysLoading" @click="loadKeys">
             刷新 Key
           </button>
-          <a class="secondary-button config-key-button" :href="mainSiteKeysURL">
+          <button class="secondary-button config-key-button" type="button" @click="openKeySetupDialog">
             配置 API Key
-          </a>
+          </button>
         </div>
       </form>
 
@@ -785,6 +934,116 @@ onUnmounted(() => {
         </div>
       </section>
     </section>
+
+    <BaseDialog
+      :show="showKeySetupDialog"
+      title="配置图片 API Key"
+      width="wide"
+      @close="closeKeySetupDialog"
+    >
+      <div class="space-y-5">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            :class="[
+              'rounded-lg border px-4 py-3 text-left transition-colors',
+              keySetupMode === 'existing'
+                ? 'border-primary-400 bg-primary-50 text-primary-900 dark:border-primary-700 dark:bg-primary-900/20 dark:text-primary-100'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-primary-200 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200'
+            ]"
+            @click="keySetupMode = 'existing'"
+          >
+            <span class="block text-sm font-semibold">使用已有 Key</span>
+            <span class="mt-1 block text-xs opacity-75">给现有密钥绑定图片分组</span>
+          </button>
+          <button
+            type="button"
+            :class="[
+              'rounded-lg border px-4 py-3 text-left transition-colors',
+              keySetupMode === 'new'
+                ? 'border-primary-400 bg-primary-50 text-primary-900 dark:border-primary-700 dark:bg-primary-900/20 dark:text-primary-100'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-primary-200 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-200'
+            ]"
+            @click="keySetupMode = 'new'"
+          >
+            <span class="block text-sm font-semibold">新建图片 Key</span>
+            <span class="mt-1 block text-xs opacity-75">创建后自动选中使用</span>
+          </button>
+        </div>
+
+        <div v-if="keySetupMode === 'existing'" class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-900 dark:text-white">API Key</label>
+          <Select
+            v-model="setupKeyId"
+            :options="setupKeyOptions"
+            :disabled="keysLoading || setupKeyOptions.length === 0"
+            :searchable="setupKeyOptions.length > 8"
+            placeholder="选择要配置的 Key"
+            search-placeholder="搜索 Key"
+          />
+        </div>
+
+        <div v-else class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-900 dark:text-white" for="studio-key-name">
+            Key 名称
+          </label>
+          <input
+            id="studio-key-name"
+            v-model="setupKeyName"
+            type="text"
+            class="input"
+            placeholder="图片生成"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-900 dark:text-white">图片分组</label>
+          <Select
+            v-model="setupGroupId"
+            :options="imageGroupOptions"
+            :disabled="groupsLoading || imageGroupOptions.length === 0"
+            searchable
+            placeholder="选择 Gemini 或 Antigravity 图片分组"
+            search-placeholder="搜索图片分组"
+            empty-text="没有可用的图片分组"
+          />
+        </div>
+
+        <div
+          v-if="imageGroupOptions.length === 0 && !groupsLoading"
+          class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100"
+        >
+          当前账号没有可绑定的 Gemini 或 Antigravity 图片分组。
+        </div>
+
+        <div v-if="keySetupErrorMessage" class="alert-box alert-danger">
+          {{ keySetupErrorMessage }}
+        </div>
+
+        <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-4 dark:border-dark-700">
+          <a class="btn btn-secondary" :href="advancedKeyManagementURL">完整密钥管理</a>
+          <a v-if="authStore.isAdmin" class="btn btn-secondary" :href="adminAccountsURL">
+            上游账号管理
+          </a>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn btn-secondary" @click="closeKeySetupDialog">
+            取消
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            :disabled="!canSubmitKeySetup"
+            @click="handleKeySetupSubmit"
+          >
+            {{ keySetupSubmitting ? '保存中...' : '保存并使用' }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
   </main>
 </template>
 
@@ -838,8 +1097,14 @@ onUnmounted(() => {
 }
 
 .inline-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
   color: inherit;
+  font: inherit;
+  font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .workspace-grid {
@@ -1234,10 +1499,6 @@ onUnmounted(() => {
 .download-button {
   min-height: 36px;
   padding: 0 12px;
-}
-
-.inline-link {
-  font-weight: 700;
 }
 
 @keyframes shimmer {
