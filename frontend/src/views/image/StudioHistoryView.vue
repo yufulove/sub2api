@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { usageAPI } from '@/api'
+import { listImageHistory, type StudioImageHistoryAsset } from '@/api/image'
 import StudioShell from '@/components/image/StudioShell.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { useAppStore, useImageStudioStore } from '@/stores'
@@ -32,13 +33,15 @@ const rangePresets: HistoryRangePreset[] = ['7d', '30d', '90d', 'all']
 
 const rangePreset = ref<HistoryRangePreset>('30d')
 const usageRecords = ref<UsageLog[]>([])
+const serverHistoryCards = ref<StudioSessionGeneration[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
+const previewCard = ref<StudioSessionGeneration | null>(null)
 
 let pendingController: AbortController | null = null
 
 const sessionCards = computed(() => imageStudioStore.sessionGenerations)
-const filteredSessionCards = computed(() => sessionCards.value)
+const filteredSessionCards = computed(() => mergeHistoryCards(sessionCards.value, serverHistoryCards.value))
 const isSessionHydrating = computed(() => imageStudioStore.isHydrating)
 const historyFlows = computed(() => buildImageStudioHistoryFlows(usageRecords.value, filteredSessionCards.value))
 
@@ -57,6 +60,10 @@ watch(rangePreset, () => {
 
 function setRangePreset(value: HistoryRangePreset) {
   rangePreset.value = value
+}
+
+async function refreshHistory() {
+  await Promise.all([loadUsageHistory(), loadServerImageHistory()])
 }
 
 async function loadUsageHistory() {
@@ -125,6 +132,15 @@ async function loadUsageHistory() {
   }
 }
 
+async function loadServerImageHistory() {
+  try {
+    const response = await listImageHistory(MAX_HISTORY_ITEMS)
+    serverHistoryCards.value = (response.items || []).map(serverAssetToSessionCard)
+  } catch (error) {
+    console.error('Failed to load server image history:', error)
+  }
+}
+
 function resolveDateRange(preset: HistoryRangePreset): { startDate?: string; endDate?: string } {
   if (preset === 'all') {
     return {}
@@ -185,6 +201,55 @@ function formatCost(value: number | null | undefined, maximumFractionDigits = 4)
   })
 }
 
+function serverAssetToSessionCard(asset: StudioImageHistoryAsset): StudioSessionGeneration {
+  const createdMs = new Date(asset.created_at).getTime()
+  return {
+    id: asset.client_id || `server-${asset.id}`,
+    created: Number.isFinite(createdMs) ? Math.floor(createdMs / 1000) : Math.floor(Date.now() / 1000),
+    prompt: asset.prompt || '',
+    revisedPrompt: asset.revised_prompt || '',
+    model: asset.model || 'image',
+    size: asset.size || '2K',
+    keyName: '服务端历史',
+    imageSrc: asset.image_url
+  }
+}
+
+function mergeHistoryCards(
+  localCards: StudioSessionGeneration[],
+  serverCards: StudioSessionGeneration[]
+): StudioSessionGeneration[] {
+  const merged: StudioSessionGeneration[] = []
+  const seen = new Set<string>()
+
+  for (const card of [...localCards, ...serverCards]) {
+    const key = historyCardKey(card)
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    merged.push(card)
+  }
+  return merged.sort((left, right) => right.created - left.created).slice(0, MAX_HISTORY_ITEMS)
+}
+
+function historyCardKey(card: StudioSessionGeneration): string {
+  return [
+    card.created,
+    card.model.trim().toLowerCase(),
+    card.size.trim().toLowerCase(),
+    card.prompt.trim().replace(/\s+/g, ' ').toLowerCase(),
+    card.revisedPrompt.trim().replace(/\s+/g, ' ').toLowerCase()
+  ].join('::')
+}
+
+function resolveCardIndex(card: StudioSessionGeneration): number {
+  return Math.max(
+    filteredSessionCards.value.findIndex((item) => item.id === card.id),
+    0
+  )
+}
+
 function downloadCard(card: StudioSessionGeneration, index: number) {
   const link = document.createElement('a')
   link.href = card.imageSrc
@@ -192,6 +257,14 @@ function downloadCard(card: StudioSessionGeneration, index: number) {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+}
+
+function openPreviewCard(card: StudioSessionGeneration) {
+  previewCard.value = card
+}
+
+function closePreviewCard() {
+  previewCard.value = null
 }
 
 function reuseCardPrompt(card: StudioSessionGeneration) {
@@ -311,12 +384,20 @@ function isAbortError(error: unknown): boolean {
   return payload.name === 'AbortError' || payload.code === 'ERR_CANCELED'
 }
 
+function handlePreviewKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && previewCard.value) {
+    closePreviewCard()
+  }
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', handlePreviewKeydown)
   await imageStudioStore.ensureHydrated()
-  await loadUsageHistory()
+  await refreshHistory()
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handlePreviewKeydown)
   pendingController?.abort()
 })
 </script>
@@ -336,7 +417,7 @@ onUnmounted(() => {
 
       <div class="hero-actions">
         <RouterLink class="ghost-link" to="/studio/generate">返回生成</RouterLink>
-        <button class="ghost-button" type="button" :disabled="loading" @click="loadUsageHistory">
+        <button class="ghost-button" type="button" :disabled="loading" @click="refreshHistory">
           刷新记录
         </button>
       </div>
@@ -344,7 +425,7 @@ onUnmounted(() => {
 
     <section class="stats-grid">
       <article class="stat-card">
-        <span>本地结果</span>
+        <span>可查看图片</span>
         <strong>{{ filteredSessionCards.length }}</strong>
       </article>
       <article class="stat-card">
@@ -368,19 +449,19 @@ onUnmounted(() => {
     <section class="panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">本地结果</p>
-          <h2>当前浏览器图片</h2>
+          <p class="eyebrow">历史图片</p>
+          <h2>可查看图片</h2>
           <p class="copy">
-            这里显示当前浏览器保留的最新生成结果。
+            这里显示服务端已保存的图片，以及当前浏览器仍保留的最新生成结果。
           </p>
         </div>
         <button
-          v-if="filteredSessionCards.length > 0"
+          v-if="sessionCards.length > 0"
           class="ghost-button"
           type="button"
           @click="imageStudioStore.clearSessionGenerations()"
         >
-          清空本地结果
+          清空本地缓存
         </button>
       </div>
 
@@ -390,8 +471,11 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="filteredSessionCards.length === 0" class="empty-state">
-        <strong>暂无本地结果</strong>
-        <p>生成图片后会立即出现在这里。</p>
+        <strong>暂无可查看图片</strong>
+        <p v-if="usageRecords.length > 0">
+          下方计费明细只保存请求和费用，旧记录没有原图文件；从现在开始，新生成图片会保存到历史图片里。
+        </p>
+        <p v-else>生成图片后会立即出现在这里。</p>
       </div>
 
       <div v-else class="session-grid">
@@ -400,9 +484,10 @@ onUnmounted(() => {
           :key="card.id"
           class="session-card"
         >
-          <div class="session-image">
+          <button class="session-image session-image-button" type="button" @click="openPreviewCard(card)">
             <img :src="card.imageSrc" :alt="card.prompt" loading="lazy" />
-          </div>
+            <span>放大查看</span>
+          </button>
           <div class="session-body">
             <div class="meta-row">
               <span>{{ formatSessionTimestamp(card.created) }}</span>
@@ -461,13 +546,19 @@ onUnmounted(() => {
         >
           <div :class="['flow-preview', flow.sessionCards.length === 0 && 'flow-preview-empty']">
             <div v-if="flow.sessionCards.length > 0" class="flow-preview-grid">
-              <img
+              <button
                 v-for="card in flow.sessionCards.slice(0, 4)"
                 :key="card.id"
+                class="flow-preview-button"
+                type="button"
+                @click="openPreviewCard(card)"
+              >
+                <img
                 :src="card.imageSrc"
                 :alt="card.prompt"
                 loading="lazy"
-              />
+                />
+              </button>
             </div>
             <div v-else class="flow-preview-placeholder">
               <strong>暂无本地预览</strong>
@@ -609,6 +700,53 @@ onUnmounted(() => {
         </article>
       </div>
     </section>
+
+    <div v-if="previewCard" class="image-lightbox" @click.self="closePreviewCard">
+      <article class="lightbox-panel">
+        <div class="lightbox-media">
+          <img :src="previewCard.imageSrc" :alt="previewCard.prompt" class="lightbox-image" />
+        </div>
+        <div class="lightbox-details">
+          <div class="lightbox-title-row">
+            <div>
+              <p class="eyebrow">图片预览</p>
+              <h2>{{ previewCard.model }}</h2>
+            </div>
+            <button class="icon-button" type="button" aria-label="关闭预览" @click="closePreviewCard">×</button>
+          </div>
+          <dl class="lightbox-meta">
+            <div>
+              <dt>尺寸</dt>
+              <dd>{{ previewCard.size }}</dd>
+            </div>
+            <div>
+              <dt>路线</dt>
+              <dd>{{ previewCard.keyName }}</dd>
+            </div>
+            <div>
+              <dt>时间</dt>
+              <dd>{{ formatSessionTimestamp(previewCard.created) }}</dd>
+            </div>
+          </dl>
+          <div class="lightbox-prompt">
+            <strong>提示词</strong>
+            <p>{{ previewCard.prompt }}</p>
+          </div>
+          <div v-if="previewCard.revisedPrompt" class="lightbox-prompt">
+            <strong>修订提示词</strong>
+            <p>{{ previewCard.revisedPrompt }}</p>
+          </div>
+          <div class="lightbox-actions">
+            <button class="inline-button" type="button" @click="reuseCardPrompt(previewCard)">继续编辑</button>
+            <button class="inline-button" type="button" @click="copyCardPrompt(previewCard)">复制提示词</button>
+            <button class="inline-button" type="button" @click="copyCardStudioLink(previewCard)">复制链接</button>
+            <button class="inline-button" type="button" @click="downloadCard(previewCard, resolveCardIndex(previewCard))">
+              下载
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
   </main>
 </template>
 
@@ -824,11 +962,46 @@ onUnmounted(() => {
   background: rgba(20, 39, 32, 0.04);
 }
 
+.session-image-button,
+.flow-preview-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+
 .session-image img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.session-image-button span {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(8, 25, 20, 0.72);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.session-image-button:hover span,
+.session-image-button:focus-visible span {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .flow-card {
@@ -840,6 +1013,7 @@ onUnmounted(() => {
 .flow-preview-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   width: 100%;
   height: 100%;
 }
@@ -848,6 +1022,11 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.flow-preview-button {
+  min-width: 0;
+  background: rgba(20, 39, 32, 0.04);
 }
 
 .flow-preview-empty {
@@ -1013,6 +1192,118 @@ onUnmounted(() => {
   color: #7b251e;
 }
 
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 13, 11, 0.72);
+}
+
+.lightbox-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  width: min(1180px, 100%);
+  max-height: min(860px, calc(100vh - 48px));
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+}
+
+.lightbox-media {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  background: #07100d;
+}
+
+.lightbox-image {
+  display: block;
+  max-width: 100%;
+  max-height: min(860px, calc(100vh - 48px));
+  object-fit: contain;
+}
+
+.lightbox-details {
+  min-width: 0;
+  padding: 24px;
+  overflow: auto;
+}
+
+.lightbox-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.lightbox-title-row h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: rgba(20, 39, 32, 0.62);
+  cursor: pointer;
+  font-size: 1.4rem;
+}
+
+.lightbox-meta {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 0;
+}
+
+.lightbox-meta div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.lightbox-meta dt {
+  color: rgba(20, 39, 32, 0.58);
+}
+
+.lightbox-meta dd {
+  min-width: 0;
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.lightbox-prompt {
+  margin-top: 20px;
+}
+
+.lightbox-prompt strong {
+  display: block;
+}
+
+.lightbox-prompt p {
+  margin: 8px 0 0;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.lightbox-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
 @keyframes shimmer {
   to {
     background-position-x: -200%;
@@ -1027,8 +1318,13 @@ onUnmounted(() => {
   }
 
   .session-grid,
-  .flow-card {
+  .flow-card,
+  .lightbox-panel {
     grid-template-columns: 1fr;
+  }
+
+  .lightbox-panel {
+    overflow: auto;
   }
 
   .preset-row {
@@ -1054,6 +1350,18 @@ onUnmounted(() => {
 
   .card-actions {
     justify-content: flex-start;
+  }
+
+  .image-lightbox {
+    padding: 12px;
+  }
+
+  .lightbox-media {
+    min-height: 260px;
+  }
+
+  .lightbox-details {
+    padding: 18px;
   }
 
   .ledger-side {

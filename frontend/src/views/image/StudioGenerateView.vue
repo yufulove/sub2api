@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { userGroupsAPI } from '@/api'
-import { editImage, generateImage } from '@/api/image'
+import { editImage, generateImage, saveImageHistory } from '@/api/image'
 import StudioShell from '@/components/image/StudioShell.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
 import { useClipboard } from '@/composables/useClipboard'
@@ -358,24 +358,38 @@ async function handleGenerate() {
         })
 
     const items = Array.isArray(response.data) ? response.data : []
-    const newCards: StudioSessionGeneration[] = items
-      .filter((item) => typeof item.b64_json === 'string' && item.b64_json.trim() !== '')
-      .map((item, index) => ({
-        id: `${response.created}-${index}-${Math.random().toString(36).slice(2, 8)}`,
-        created: response.created,
-        prompt: cleanPrompt,
-        revisedPrompt: item.revised_prompt?.trim() || '',
-        model: selectedModel.value,
-        size: selectedSize.value,
-        keyName: group.name,
-        imageSrc: `data:image/png;base64,${item.b64_json}`
-      }))
+    const renderItems = items.filter((item) => typeof item.b64_json === 'string' && item.b64_json.trim() !== '')
+    const newCards: StudioSessionGeneration[] = renderItems.map((item, index) => ({
+      id: `${response.created}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+      created: response.created,
+      prompt: cleanPrompt,
+      revisedPrompt: item.revised_prompt?.trim() || '',
+      model: selectedModel.value,
+      size: selectedSize.value,
+      keyName: group.name,
+      imageSrc: `data:image/png;base64,${item.b64_json}`
+    }))
 
     if (newCards.length === 0) {
       throw new Error('服务端没有返回可渲染的图片数据。')
     }
 
     imageStudioStore.prependGenerations(newCards)
+    void saveImageHistory({
+      request_id: newCards[0].id,
+      group_id: group.id,
+      model: selectedModel.value,
+      size: selectedSize.value,
+      prompt: cleanPrompt,
+      created: response.created,
+      images: renderItems.map((item, index) => ({
+        client_id: newCards[index]?.id,
+        b64_json: item.b64_json ?? '',
+        revised_prompt: item.revised_prompt?.trim() || ''
+      }))
+    }).catch((historyError) => {
+      console.error('Failed to save image history:', historyError)
+    })
     if (shouldEditFromImage) {
       activeIterationCard.value = newCards[0]
     }

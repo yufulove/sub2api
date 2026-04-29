@@ -80,6 +80,9 @@ func RegisterUserRoutes(
 		{
 			studio.POST("/images/generations", h.StudioImageGenerations)
 			studio.POST("/images/edits", h.StudioImageEdits)
+			studio.GET("/images/history", h.ListStudioImageHistory)
+			studio.POST("/images/history", h.SaveStudioImageHistory)
+			studio.GET("/images/history/:id/content", h.GetStudioImageHistoryAsset)
 		}
 
 		// 使用记录
