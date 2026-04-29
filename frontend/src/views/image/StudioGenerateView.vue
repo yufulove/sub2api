@@ -69,11 +69,6 @@ const imageModelOptions: ImageModelOption[] = [
     description: '质量优先图片模型'
   },
   {
-    value: 'gemini-3-pro-image-preview',
-    label: 'Gemini 3 Pro Image Preview',
-    description: 'Pro 预览路线'
-  },
-  {
     value: 'gpt-image-2',
     label: 'GPT Image 2',
     description: 'OpenAI 最新图片模型'

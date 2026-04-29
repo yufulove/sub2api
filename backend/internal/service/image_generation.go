@@ -35,9 +35,13 @@ func DedicatedImageGenerationEndpointMessage() string {
 }
 
 func IsImageGenerationModel(model string) bool {
-	switch normalizeImageGenerationModelName(model) {
-	case "gpt-image-1",
-		"dall-e-2",
+	normalized := normalizeImageGenerationModelName(model)
+	if strings.HasPrefix(normalized, "gpt-image-") {
+		return true
+	}
+
+	switch normalized {
+	case "dall-e-2",
 		"dall-e-3",
 		"gemini-3.1-flash-image",
 		"gemini-3.1-flash-image-preview",
@@ -55,6 +59,16 @@ func normalizeImageGenerationModelName(model string) string {
 	normalized := strings.ToLower(strings.TrimSpace(model))
 	normalized = strings.TrimPrefix(normalized, "models/")
 	return normalized
+}
+
+func CanonicalImageGenerationModel(model string) string {
+	normalized := normalizeImageGenerationModelName(model)
+	switch normalized {
+	case "gemini-3-pro-image-preview":
+		return "gemini-3-pro-image"
+	default:
+		return normalized
+	}
 }
 
 func ParseOpenAIImageGenerationRequest(body []byte) (*OpenAIImageGenerationRequest, error) {
@@ -153,41 +167,59 @@ func ParseGeminiImageGenerationResponse(body []byte) (*OpenAIImageGenerationResp
 		return nil, fmt.Errorf("empty upstream response")
 	}
 
-	root := gjson.ParseBytes(body)
-	if response := root.Get("response"); response.Exists() {
-		root = response
-	}
-
-	candidates := root.Get("candidates")
-	if !candidates.Exists() || !candidates.IsArray() {
-		return nil, fmt.Errorf("upstream image response did not contain candidates")
-	}
-
 	data := make([]OpenAIImageGenerationData, 0, 1)
-	for _, candidate := range candidates.Array() {
-		var revisedPrompt string
-		parts := candidate.Get("content.parts")
-		if !parts.Exists() || !parts.IsArray() {
+	hasCandidates := false
+	textSummary := ""
+	for _, root := range geminiImageResponseRoots(body) {
+		if response := root.Get("response"); response.Exists() {
+			root = response
+		}
+
+		candidates := root.Get("candidates")
+		if !candidates.Exists() || !candidates.IsArray() {
 			continue
 		}
-		for _, part := range parts.Array() {
-			text := strings.TrimSpace(part.Get("text").String())
-			if text != "" && revisedPrompt == "" {
-				revisedPrompt = text
-			}
-			mimeType := strings.ToLower(strings.TrimSpace(part.Get("inlineData.mimeType").String()))
-			imageData := strings.TrimSpace(part.Get("inlineData.data").String())
-			if !strings.HasPrefix(mimeType, "image/") || imageData == "" {
+		hasCandidates = true
+
+		for _, candidate := range candidates.Array() {
+			var revisedPrompt string
+			parts := candidate.Get("content.parts")
+			if !parts.Exists() || !parts.IsArray() {
 				continue
 			}
-			data = append(data, OpenAIImageGenerationData{
-				B64JSON:       imageData,
-				RevisedPrompt: revisedPrompt,
-			})
+			for _, part := range parts.Array() {
+				text := strings.TrimSpace(part.Get("text").String())
+				if text != "" && revisedPrompt == "" {
+					revisedPrompt = text
+				}
+				if text != "" && textSummary == "" {
+					textSummary = text
+				}
+				if mimeType, imageData := imageDataFromGeminiPart(part); imageData != "" {
+					data = append(data, OpenAIImageGenerationData{
+						B64JSON:       imageData,
+						RevisedPrompt: revisedPrompt,
+					})
+					_ = mimeType
+				}
+				if mimeType, imageData := imageDataFromTextDataURI(text); imageData != "" {
+					data = append(data, OpenAIImageGenerationData{
+						B64JSON:       imageData,
+						RevisedPrompt: revisedPrompt,
+					})
+					_ = mimeType
+				}
+			}
 		}
 	}
 
 	if len(data) == 0 {
+		if !hasCandidates {
+			return nil, fmt.Errorf("upstream image response did not contain candidates")
+		}
+		if textSummary != "" {
+			return nil, fmt.Errorf("upstream image response returned text instead of image data: %s", truncateImageResponseText(textSummary))
+		}
 		return nil, fmt.Errorf("upstream image response did not contain image data")
 	}
 
@@ -195,4 +227,89 @@ func ParseGeminiImageGenerationResponse(body []byte) (*OpenAIImageGenerationResp
 		Created: time.Now().Unix(),
 		Data:    data,
 	}, nil
+}
+
+func geminiImageResponseRoots(body []byte) []gjson.Result {
+	trimmed := strings.TrimSpace(string(body))
+	if strings.HasPrefix(trimmed, "data:") {
+		roots := make([]gjson.Result, 0, 4)
+		for _, line := range strings.Split(trimmed, "\n") {
+			line = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "data:"))
+			if line == "" || line == "[DONE]" || !gjson.Valid(line) {
+				continue
+			}
+			root := gjson.Parse(line)
+			if root.IsArray() {
+				roots = append(roots, root.Array()...)
+				continue
+			}
+			roots = append(roots, root)
+		}
+		return roots
+	}
+
+	if !gjson.ValidBytes(body) {
+		return nil
+	}
+	root := gjson.ParseBytes(body)
+	if root.IsArray() {
+		return root.Array()
+	}
+	return []gjson.Result{root}
+}
+
+func imageDataFromGeminiPart(part gjson.Result) (string, string) {
+	for _, prefix := range []string{"inlineData", "inline_data"} {
+		mimeType := strings.ToLower(strings.TrimSpace(firstGeminiPartString(part, prefix+".mimeType", prefix+".mime_type")))
+		imageData := strings.TrimSpace(part.Get(prefix + ".data").String())
+		if strings.HasPrefix(mimeType, "image/") && imageData != "" {
+			return mimeType, imageData
+		}
+	}
+	return "", ""
+}
+
+func firstGeminiPartString(part gjson.Result, paths ...string) string {
+	for _, path := range paths {
+		if value := strings.TrimSpace(part.Get(path).String()); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func imageDataFromTextDataURI(text string) (string, string) {
+	lower := strings.ToLower(text)
+	start := strings.Index(lower, "data:image/")
+	if start < 0 {
+		return "", ""
+	}
+	segment := text[start:]
+	separator := strings.Index(strings.ToLower(segment), ";base64,")
+	if separator < 0 {
+		return "", ""
+	}
+	mimeType := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(segment[:separator])), "data:")
+	encoded := segment[separator+len(";base64,"):]
+	end := len(encoded)
+	for i, r := range encoded {
+		if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '+' || r == '/' || r == '=' {
+			continue
+		}
+		end = i
+		break
+	}
+	imageData := strings.TrimSpace(encoded[:end])
+	if !strings.HasPrefix(mimeType, "image/") || imageData == "" {
+		return "", ""
+	}
+	return mimeType, imageData
+}
+
+func truncateImageResponseText(text string) string {
+	text = strings.Join(strings.Fields(text), " ")
+	if len(text) <= 180 {
+		return text
+	}
+	return text[:180] + "..."
 }

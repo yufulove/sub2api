@@ -65,6 +65,7 @@ func (h *GatewayHandler) ImageGenerations(c *gin.Context) {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "model must be an image generation model")
 		return
 	}
+	req.Model = service.CanonicalImageGenerationModel(req.Model)
 	if h.gatewayService == nil || h.geminiCompatService == nil {
 		h.errorResponse(c, http.StatusInternalServerError, "api_error", "Image generation handler dependencies are not configured")
 		return
