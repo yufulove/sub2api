@@ -300,7 +300,10 @@ func (r *apiKeyRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *apiKeyRepository) ListByUserID(ctx context.Context, userID int64, params pagination.PaginationParams, filters service.APIKeyListFilters) ([]service.APIKey, *pagination.PaginationResult, error) {
-	q := r.activeQuery().Where(apikey.UserIDEQ(userID))
+	q := r.activeQuery().Where(
+		apikey.UserIDEQ(userID),
+		apikey.Not(apikey.NameHasPrefix(service.StudioImageAPIKeyNamePrefix)),
+	)
 
 	// Apply filters
 	if filters.Search != "" {
@@ -361,7 +364,10 @@ func (r *apiKeyRepository) VerifyOwnership(ctx context.Context, userID int64, ap
 }
 
 func (r *apiKeyRepository) CountByUserID(ctx context.Context, userID int64) (int64, error) {
-	count, err := r.activeQuery().Where(apikey.UserIDEQ(userID)).Count(ctx)
+	count, err := r.activeQuery().Where(
+		apikey.UserIDEQ(userID),
+		apikey.Not(apikey.NameHasPrefix(service.StudioImageAPIKeyNamePrefix)),
+	).Count(ctx)
 	return int64(count), err
 }
 

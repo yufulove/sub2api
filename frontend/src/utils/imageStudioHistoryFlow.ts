@@ -55,6 +55,18 @@ function normalizeKeyPart(value: string | null): string {
   return (value ?? '').trim().toLowerCase()
 }
 
+function routeNameFromUsage(record: UsageLog): string | null {
+  const groupName = readTrimmed(record.group?.name)
+  if (groupName) {
+    return groupName
+  }
+  const keyName = readTrimmed(record.api_key?.name)
+  if (!keyName || keyName.startsWith('__studio_image__:')) {
+    return null
+  }
+  return keyName
+}
+
 function buildFlowKey(prompt: string, model: string | null, size: string | null): string {
   return [normalizePromptKey(prompt), normalizeKeyPart(model), normalizeKeyPart(size)].join('::')
 }
@@ -138,8 +150,9 @@ export function buildImageStudioHistoryFlows(
     if (revisedPrompt && revisedPrompt !== prompt) {
       group.revisedPrompt = revisedPrompt
     }
-    if (record.api_key?.name) {
-      group.keyNames.add(record.api_key.name)
+    const routeName = routeNameFromUsage(record)
+    if (routeName) {
+      group.keyNames.add(routeName)
     }
   }
 

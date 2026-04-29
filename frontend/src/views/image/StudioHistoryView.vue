@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { keysAPI, usageAPI } from '@/api'
+import { usageAPI } from '@/api'
 import StudioShell from '@/components/image/StudioShell.vue'
-import Select, { type SelectOption } from '@/components/common/Select.vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { useAppStore, useImageStudioStore } from '@/stores'
 import type { StudioSessionGeneration } from '@/stores/imageStudio'
-import type { ApiKey, UsageLog, UsageQueryParams } from '@/types'
+import type { UsageLog, UsageQueryParams } from '@/types'
 import { buildComposerPresetQuery, type ImageStudioComposerPreset } from '@/utils/imageStudioComposer'
 import {
   buildImageStudioHistoryFlows,
@@ -31,35 +30,17 @@ const imageStudioStore = useImageStudioStore()
 const { copyToClipboard } = useClipboard()
 const rangePresets: HistoryRangePreset[] = ['7d', '30d', '90d', 'all']
 
-const apiKeys = ref<ApiKey[]>([])
-const selectedApiKeyId = ref<number | null>(null)
 const rangePreset = ref<HistoryRangePreset>('30d')
 const usageRecords = ref<UsageLog[]>([])
 const loading = ref(false)
-const loadingKeys = ref(false)
 const errorMessage = ref('')
 
 let pendingController: AbortController | null = null
 
-const selectedKey = computed(() => apiKeys.value.find((key) => key.id === selectedApiKeyId.value) ?? null)
 const sessionCards = computed(() => imageStudioStore.sessionGenerations)
-const filteredSessionCards = computed(() => {
-  const keyName = selectedKey.value?.name?.trim()
-  if (!keyName) {
-    return sessionCards.value
-  }
-  return sessionCards.value.filter((card) => card.keyName.trim() === keyName)
-})
+const filteredSessionCards = computed(() => sessionCards.value)
 const isSessionHydrating = computed(() => imageStudioStore.isHydrating)
 const historyFlows = computed(() => buildImageStudioHistoryFlows(usageRecords.value, filteredSessionCards.value))
-
-const keyOptions = computed<SelectOption[]>(() => [
-  { value: null, label: '全部 API Key' },
-  ...apiKeys.value.map((key) => ({
-    value: key.id,
-    label: key.group?.name ? `${key.name} / ${key.group.name}` : `${key.name} / 未绑定分组`
-  }))
-])
 
 const usageRequestCount = computed(() => usageRecords.value.length)
 const usageImageCount = computed(() =>
@@ -74,24 +55,8 @@ watch(rangePreset, () => {
   loadUsageHistory()
 })
 
-watch(selectedApiKeyId, () => {
-  loadUsageHistory()
-})
-
 function setRangePreset(value: HistoryRangePreset) {
   rangePreset.value = value
-}
-
-async function loadKeys() {
-  loadingKeys.value = true
-  try {
-    const response = await keysAPI.list(1, 200)
-    apiKeys.value = response.items
-  } catch {
-    appStore.showError('历史筛选的 API Key 加载失败。')
-  } finally {
-    loadingKeys.value = false
-  }
 }
 
 async function loadUsageHistory() {
@@ -107,9 +72,6 @@ async function loadUsageHistory() {
       page_size: 100
     }
 
-    if (selectedApiKeyId.value != null) {
-      baseParams.api_key_id = selectedApiKeyId.value
-    }
     if (range.startDate) {
       baseParams.start_date = range.startDate
     }
@@ -305,6 +267,18 @@ function resolveUsageRecordRequestedSize(item: UsageLog): string | null {
   return resolveUsageImageRequestedSize(item)
 }
 
+function usageRouteLabel(item: UsageLog): string {
+  const groupName = item.group?.name?.trim()
+  if (groupName) {
+    return groupName
+  }
+  const keyName = item.api_key?.name?.trim()
+  if (keyName && !keyName.startsWith('__studio_image__:')) {
+    return keyName
+  }
+  return '未知路线'
+}
+
 function hasUsageRecordComposerPreset(item: UsageLog): boolean {
   return buildUsageComposerPreset(item) != null
 }
@@ -339,7 +313,6 @@ function isAbortError(error: unknown): boolean {
 
 onMounted(async () => {
   await imageStudioStore.ensureHydrated()
-  await loadKeys()
   await loadUsageHistory()
 })
 
@@ -523,7 +496,7 @@ onUnmounted(() => {
             <div class="footer-row flow-footer">
               <div class="flow-summary">
                 <strong>{{ formatCost(flow.totalCost, 4) }}</strong>
-                <span>{{ flow.keyNames.join(' / ') || '无 Key 元数据' }}</span>
+                <span>{{ flow.keyNames.join(' / ') || '无路线元数据' }}</span>
               </div>
               <div class="card-actions">
                 <button type="button" class="inline-button" @click="openFlowInStudio(flow)">
@@ -554,11 +527,6 @@ onUnmounted(() => {
       </div>
 
       <div class="filter-bar">
-        <Select
-          v-model="selectedApiKeyId"
-          :options="keyOptions"
-          :disabled="loadingKeys"
-        />
         <div class="preset-row">
           <button
             v-for="preset in rangePresets"
@@ -596,7 +564,7 @@ onUnmounted(() => {
           <div class="ledger-main">
             <div class="meta-row">
               <span>{{ formatTimestamp(item.created_at) }}</span>
-              <span>{{ item.api_key?.name || '未知 Key' }}</span>
+              <span>{{ usageRouteLabel(item) }}</span>
             </div>
             <h3>{{ item.model }}</h3>
             <p class="secondary-text">
@@ -853,9 +821,7 @@ onUnmounted(() => {
 .session-image,
 .flow-preview {
   aspect-ratio: 1 / 1;
-  background:
-    radial-gradient(circle at top left, rgba(177, 75, 47, 0.14), transparent 55%),
-    rgba(20, 39, 32, 0.04);
+  background: rgba(20, 39, 32, 0.04);
 }
 
 .session-image img {

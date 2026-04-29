@@ -10,7 +10,6 @@ const authStore = useAuthStore()
 const imageStudioStore = useImageStudioStore()
 
 const mainSiteDashboardURL = computed(() => resolveMainSiteURL('/dashboard'))
-const mainSiteKeysURL = computed(() => resolveMainSiteURL('/keys'))
 
 const primaryActionLabel = computed(() =>
   authStore.isAuthenticated ? 'Open generate workspace' : 'Sign in to start'
@@ -63,7 +62,7 @@ onMounted(() => {
         <dl class="panel-stats">
           <div>
             <dt>Generate</dt>
-            <dd>Prompt, key, model, size, and cost in one workspace</dd>
+            <dd>Prompt, route, model, size, and cost in one workspace</dd>
           </div>
           <div>
             <dt>History</dt>
@@ -75,7 +74,7 @@ onMounted(() => {
           </div>
           <div>
             <dt>Main Site</dt>
-            <dd>Use it for key management, top-up, and account settings</dd>
+            <dd>Use it for top-up and account settings</dd>
           </div>
         </dl>
       </aside>
@@ -86,7 +85,7 @@ onMounted(() => {
         <span class="route-index">01</span>
         <h2>Generate</h2>
         <p>
-          Pick a usable key, write a prompt, choose size and model, and render images without leaving the page.
+          Pick a usable route, write a prompt, choose size and model, and render images without leaving the page.
         </p>
         <RouterLink class="inline-link" to="/studio/generate">Start generating</RouterLink>
       </article>
@@ -115,7 +114,7 @@ onMounted(() => {
         <p class="eyebrow">Workflow</p>
         <h2>One image workspace, one shared account system</h2>
         <p>
-          The image workflow lives here, while balance, login, and key provisioning still come from the same
+          The image workflow lives here, while balance and login still come from the same
           account. That keeps the image entry clean without splitting the wallet or the auth model.
         </p>
       </div>
@@ -139,13 +138,12 @@ onMounted(() => {
     <section class="footer-panel">
       <div>
         <p class="eyebrow">Main Site</p>
-        <h2>Top up balance and manage keys on the main site</h2>
+        <h2>Top up balance and manage your account on the main site</h2>
         <p>
-          The main dashboard still owns API key binding and wallet operations. Come back here when you want to generate.
+          The main dashboard still owns wallet operations and account settings. Come back here when you want to generate.
         </p>
       </div>
       <div class="footer-actions">
-        <a class="secondary-link" :href="mainSiteKeysURL">Manage API keys</a>
         <a class="secondary-link" :href="mainSiteDashboardURL">Open dashboard</a>
       </div>
     </section>
@@ -164,10 +162,7 @@ onMounted(() => {
   --accent-deep: #9f381d;
   min-height: 100vh;
   padding: 40px 24px 72px;
-  background:
-    radial-gradient(circle at top left, rgba(217, 98, 58, 0.16), transparent 28rem),
-    radial-gradient(circle at right center, rgba(32, 112, 85, 0.16), transparent 24rem),
-    linear-gradient(180deg, #faf5ee 0%, var(--paper) 100%);
+  background: linear-gradient(180deg, #faf5ee 0%, var(--paper) 100%);
   color: var(--ink);
   font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
 }
@@ -210,7 +205,7 @@ onMounted(() => {
 .eyebrow {
   margin: 0 0 12px;
   font-size: 0.78rem;
-  letter-spacing: 0.24em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--accent-deep);
 }
@@ -220,7 +215,7 @@ onMounted(() => {
 .footer-panel h2 {
   margin: 0;
   line-height: 0.94;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 .hero-copy h1 {
@@ -312,7 +307,7 @@ onMounted(() => {
 
 .panel-stats dt {
   font-size: 0.8rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: rgba(16, 35, 27, 0.55);
 }
@@ -371,7 +366,7 @@ onMounted(() => {
   display: block;
   color: var(--accent-deep);
   font-size: 0.92rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 

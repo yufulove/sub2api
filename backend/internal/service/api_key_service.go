@@ -20,13 +20,14 @@ import (
 )
 
 var (
-	ErrAPIKeyNotFound     = infraerrors.NotFound("API_KEY_NOT_FOUND", "api key not found")
-	ErrGroupNotAllowed    = infraerrors.Forbidden("GROUP_NOT_ALLOWED", "user is not allowed to bind this group")
-	ErrAPIKeyExists       = infraerrors.Conflict("API_KEY_EXISTS", "api key already exists")
-	ErrAPIKeyTooShort     = infraerrors.BadRequest("API_KEY_TOO_SHORT", "api key must be at least 16 characters")
-	ErrAPIKeyInvalidChars = infraerrors.BadRequest("API_KEY_INVALID_CHARS", "api key can only contain letters, numbers, underscores, and hyphens")
-	ErrAPIKeyRateLimited  = infraerrors.TooManyRequests("API_KEY_RATE_LIMITED", "too many failed attempts, please try again later")
-	ErrInvalidIPPattern   = infraerrors.BadRequest("INVALID_IP_PATTERN", "invalid IP or CIDR pattern")
+	ErrAPIKeyNotFound           = infraerrors.NotFound("API_KEY_NOT_FOUND", "api key not found")
+	ErrGroupNotAllowed          = infraerrors.Forbidden("GROUP_NOT_ALLOWED", "user is not allowed to bind this group")
+	ErrAPIKeyExists             = infraerrors.Conflict("API_KEY_EXISTS", "api key already exists")
+	ErrAPIKeyTooShort           = infraerrors.BadRequest("API_KEY_TOO_SHORT", "api key must be at least 16 characters")
+	ErrAPIKeyInvalidChars       = infraerrors.BadRequest("API_KEY_INVALID_CHARS", "api key can only contain letters, numbers, underscores, and hyphens")
+	ErrAPIKeyRateLimited        = infraerrors.TooManyRequests("API_KEY_RATE_LIMITED", "too many failed attempts, please try again later")
+	ErrInvalidIPPattern         = infraerrors.BadRequest("INVALID_IP_PATTERN", "invalid IP or CIDR pattern")
+	ErrStudioImageGroupRequired = infraerrors.BadRequest("STUDIO_IMAGE_GROUP_REQUIRED", "image group is required")
 	// ErrAPIKeyExpired        = infraerrors.Forbidden("API_KEY_EXPIRED", "api key has expired")
 	ErrAPIKeyExpired = infraerrors.Forbidden("API_KEY_EXPIRED", "api key 已过期")
 	// ErrAPIKeyQuotaExhausted = infraerrors.TooManyRequests("API_KEY_QUOTA_EXHAUSTED", "api key quota exhausted")
@@ -39,8 +40,9 @@ var (
 )
 
 const (
-	apiKeyMaxErrorsPerHour = 20
-	apiKeyLastUsedMinTouch = 30 * time.Second
+	apiKeyMaxErrorsPerHour      = 20
+	apiKeyLastUsedMinTouch      = 30 * time.Second
+	StudioImageAPIKeyNamePrefix = "__studio_image__:"
 	// DB 写失败后的短退避，避免请求路径持续同步重试造成写风暴与高延迟。
 	apiKeyLastUsedFailBackoff = 5 * time.Second
 )
@@ -791,6 +793,56 @@ func (s *APIKeyService) SearchAPIKeys(ctx context.Context, userID int64, keyword
 		return nil, fmt.Errorf("search api keys: %w", err)
 	}
 	return keys, nil
+}
+
+func StudioImageAPIKeyName(groupID int64) string {
+	return fmt.Sprintf("%s%d", StudioImageAPIKeyNamePrefix, groupID)
+}
+
+func IsStudioImageAPIKeyName(name string) bool {
+	return strings.HasPrefix(name, StudioImageAPIKeyNamePrefix)
+}
+
+func (s *APIKeyService) GetOrCreateStudioImageAPIKey(ctx context.Context, userID, groupID int64) (*APIKey, error) {
+	if groupID <= 0 {
+		return nil, ErrStudioImageGroupRequired
+	}
+
+	if key, err := s.findStudioImageAPIKey(ctx, userID, groupID); err == nil && key != nil {
+		return key, nil
+	}
+
+	created, err := s.Create(ctx, userID, CreateAPIKeyRequest{
+		Name:    StudioImageAPIKeyName(groupID),
+		GroupID: &groupID,
+	})
+	if err != nil {
+		if key, findErr := s.findStudioImageAPIKey(ctx, userID, groupID); findErr == nil && key != nil {
+			return key, nil
+		}
+		return nil, err
+	}
+
+	return s.GetByID(ctx, created.ID)
+}
+
+func (s *APIKeyService) findStudioImageAPIKey(ctx context.Context, userID, groupID int64) (*APIKey, error) {
+	name := StudioImageAPIKeyName(groupID)
+	keys, err := s.apiKeyRepo.SearchAPIKeys(ctx, userID, name, 20)
+	if err != nil {
+		return nil, fmt.Errorf("search studio image api key: %w", err)
+	}
+	for i := range keys {
+		key := keys[i]
+		if key.Name == name && key.GroupID != nil && *key.GroupID == groupID {
+			return s.GetByID(ctx, key.ID)
+		}
+	}
+	return nil, ErrAPIKeyNotFound
+}
+
+func (s *APIKeyService) GetActiveSubscriptionForGroup(ctx context.Context, userID, groupID int64) (*UserSubscription, error) {
+	return s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, userID, groupID)
 }
 
 // GetUserGroupRates 获取用户的专属分组倍率配置

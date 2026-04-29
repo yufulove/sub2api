@@ -76,6 +76,11 @@ func RegisterUserRoutes(
 			channels.GET("/available", h.AvailableChannel.List)
 		}
 
+		studio := authenticated.Group("/studio")
+		{
+			studio.POST("/images/generations", h.StudioImageGenerations)
+		}
+
 		// 使用记录
 		usage := authenticated.Group("/usage")
 		{

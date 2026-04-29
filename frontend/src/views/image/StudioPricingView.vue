@@ -32,7 +32,6 @@ const errorMessage = ref('')
 
 let activeRequestId = 0
 
-const mainSiteKeysURL = computed(() => resolveMainSiteURL('/keys'))
 const mainSiteUsageURL = computed(() => resolveMainSiteURL('/usage'))
 
 const readyGroups = computed(() =>
@@ -187,7 +186,7 @@ function routeStatus(group: Group): string {
   if (!hasAnyImagePrice(group)) {
     return '未配置图片价格'
   }
-  return '可用于 /v1/images/generations'
+  return '可用于图片生成'
 }
 </script>
 
@@ -207,7 +206,6 @@ function routeStatus(group: Group): string {
           <button class="primary-button" type="button" @click="handlePrimaryAction">
             {{ primaryActionLabel }}
           </button>
-          <a class="ghost-link" :href="mainSiteKeysURL">配置 API Key</a>
           <RouterLink class="ghost-link" to="/studio/history">历史记录</RouterLink>
         </div>
       </div>
