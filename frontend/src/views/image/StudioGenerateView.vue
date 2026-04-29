@@ -112,6 +112,20 @@ const imageSizeOptions: ImageSizeOption[] = [
     aspectRatio: '1 / 1'
   },
   {
+    value: '3840x2160',
+    label: '3840x2160',
+    description: '横图 / 4K',
+    tier: '4K',
+    aspectRatio: '16 / 9'
+  },
+  {
+    value: '2160x3840',
+    label: '2160x3840',
+    description: '竖图 / 4K',
+    tier: '4K',
+    aspectRatio: '9 / 16'
+  },
+  {
     value: '4096x4096',
     label: '4096x4096',
     description: '高分辨率 / 4K',
@@ -487,6 +501,10 @@ function isOpenAIImageModel(model: string): boolean {
   return normalized.startsWith('gpt-image-') || normalized === 'dall-e-2' || normalized === 'dall-e-3'
 }
 
+function isGPTImage2Model(model: string): boolean {
+  return model.toLowerCase().trim() === 'gpt-image-2'
+}
+
 function isGeminiImageModel(model: string): boolean {
   const normalized = model.toLowerCase()
   return normalized.startsWith('gemini-') && normalized.includes('-image')
@@ -506,10 +524,17 @@ function isGroupCompatibleWithModel(group: Group, model: string): boolean {
 }
 
 function isSizeCompatibleWithModel(size: string, model: string): boolean {
-  if (!isOpenAIImageModel(model)) {
+  const normalizedSize = size.toLowerCase().trim()
+  if (isOpenAIImageModel(model)) {
+    if (normalizedSize === '4096x4096') {
+      return false
+    }
+    if (normalizedSize === '3840x2160' || normalizedSize === '2160x3840') {
+      return isGPTImage2Model(model)
+    }
     return true
   }
-  return size !== '4096x4096'
+  return normalizedSize !== '3840x2160' && normalizedSize !== '2160x3840'
 }
 
 function ensureSizeCompatibleWithModel(model: string) {
