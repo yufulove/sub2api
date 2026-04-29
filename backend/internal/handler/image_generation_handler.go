@@ -193,10 +193,7 @@ func (h *GatewayHandler) ImageGenerations(c *gin.Context) {
 		)
 	}
 	if err != nil {
-		status := rec.Code
-		if status == 0 {
-			status = http.StatusBadGateway
-		}
+		status := bufferedForwardErrorStatus(rec)
 		message := extractBufferedForwardError(rec.Body.Bytes(), err)
 		errType := "api_error"
 		if status >= 400 && status < 500 {
@@ -296,6 +293,13 @@ func extractBufferedForwardError(body []byte, err error) string {
 		return err.Error()
 	}
 	return "Upstream image generation request failed"
+}
+
+func bufferedForwardErrorStatus(rec *httptest.ResponseRecorder) int {
+	if rec == nil || rec.Code < http.StatusBadRequest {
+		return http.StatusBadGateway
+	}
+	return rec.Code
 }
 
 func firstRevisedImagePrompt(resp *service.OpenAIImageGenerationResponse) string {

@@ -101,6 +101,17 @@ func TestGatewayImageGenerationsRejectsMultipleImages(t *testing.T) {
 	require.Equal(t, "only n=1 is currently supported", errorObj["message"])
 }
 
+func TestBufferedForwardErrorStatusNormalizesSuccessRecorderCode(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rec.Code = http.StatusOK
+
+	require.Equal(t, http.StatusBadGateway, bufferedForwardErrorStatus(rec))
+
+	rec = httptest.NewRecorder()
+	rec.WriteHeader(http.StatusTooManyRequests)
+	require.Equal(t, http.StatusTooManyRequests, bufferedForwardErrorStatus(rec))
+}
+
 func TestOpenAIImageGenerationsNotImplemented(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

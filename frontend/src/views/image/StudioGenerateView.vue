@@ -211,12 +211,23 @@ const selectedSetupBoundImageGroupLabel = computed(() => {
   const group = selectedSetupBoundImageGroup.value
   return group ? `${group.name} / ${platformLabel(group.platform)}` : ''
 })
+const boundImageGroups = computed(() => {
+  const groups: Group[] = []
+  apiKeys.value.forEach((key) => {
+    const group = key.group ?? null
+    if (isImageCapableGroup(group) && !groups.some((item) => item.id === group.id)) {
+      groups.push(group)
+    }
+  })
+  return groups
+})
 const imageGroups = computed(() => {
-  const groups = availableGroups.value.filter((group) => isImageCapableGroup(group))
-  const boundGroup = selectedSetupBoundImageGroup.value
-  if (boundGroup && !groups.some((group) => group.id === boundGroup.id)) {
-    groups.push(boundGroup)
-  }
+  const groups: Group[] = []
+  ;[...availableGroups.value, ...boundImageGroups.value].forEach((group) => {
+    if (isImageCapableGroup(group) && !groups.some((item) => item.id === group.id)) {
+      groups.push(group)
+    }
+  })
   return groups
 })
 
@@ -232,10 +243,22 @@ const setupKeyOptions = computed<SelectOption[]>(() =>
   }))
 )
 const imageGroupOptions = computed<SelectOption[]>(() =>
-  imageGroups.value.map((group) => ({
-    value: group.id,
-    label: `${group.name} / ${platformLabel(group.platform)}${group.id === selectedSetupBoundImageGroup.value?.id ? ' / 当前绑定' : ''}`
-  }))
+  imageGroups.value.map((group) => {
+    const tags: string[] = []
+    if (group.id === selectedSetupBoundImageGroup.value?.id) {
+      tags.push('当前绑定')
+    } else if (boundImageGroups.value.some((item) => item.id === group.id)) {
+      tags.push('已有 Key')
+    }
+    if (!isSetupGroupSelectable(group.id)) {
+      tags.push('选择已绑定 Key 可用')
+    }
+    return {
+      value: group.id,
+      label: `${group.name} / ${platformLabel(group.platform)}${tags.length ? ` / ${tags.join(' / ')}` : ''}`,
+      disabled: !isSetupGroupSelectable(group.id)
+    }
+  })
 )
 
 const keySelectOptions = computed<SelectOption[]>(() =>
@@ -306,6 +329,9 @@ const canGenerate = computed(() => {
 })
 const canSubmitKeySetup = computed(() => {
   if (keySetupSubmitting.value || !setupGroupId.value) {
+    return false
+  }
+  if (!isSetupGroupSelectable(setupGroupId.value)) {
     return false
   }
   if (keySetupMode.value === 'new') {
@@ -444,9 +470,16 @@ function syncKeySetupDefaults() {
     return
   }
 
-  if (!setupGroupId.value || !imageGroups.value.some((group) => group.id === setupGroupId.value)) {
-    setupGroupId.value = imageGroups.value[0]?.id ?? null
+  if (!setupGroupId.value || !isSetupGroupSelectable(setupGroupId.value)) {
+    setupGroupId.value = imageGroups.value.find((group) => isSetupGroupSelectable(group.id))?.id ?? null
   }
+}
+
+function isSetupGroupSelectable(groupId: number): boolean {
+  if (availableGroups.value.some((group) => group.id === groupId && isImageCapableGroup(group))) {
+    return true
+  }
+  return keySetupMode.value === 'existing' && selectedSetupKey.value?.group_id === groupId
 }
 
 async function handleKeySetupSubmit() {
