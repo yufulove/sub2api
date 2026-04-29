@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -8,6 +9,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"image"
+	"image/color"
+	"image/jpeg"
+	_ "image/png"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,9 +21,15 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"golang.org/x/image/draw"
+	_ "golang.org/x/image/webp"
 )
 
-const studioImageMaxBytes = 32 << 20
+const (
+	studioImageMaxBytes              = 128 << 20
+	studioImageThumbnailMaxDimension = 512
+	studioImageThumbnailQuality      = 80
+)
 
 var ErrStudioImageAssetNotFound = errors.New("studio image asset not found")
 
@@ -55,6 +67,7 @@ type StudioImageHistoryAsset struct {
 	Prompt        string    `json:"prompt"`
 	RevisedPrompt string    `json:"revised_prompt,omitempty"`
 	ImageURL      string    `json:"image_url"`
+	ThumbnailURL  string    `json:"thumbnail_url,omitempty"`
 	ContentType   string    `json:"content_type"`
 	ByteSize      int64     `json:"byte_size"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -129,7 +142,22 @@ func (s *StudioImageHistoryService) Save(ctx context.Context, input StudioImageH
 			return nil, fmt.Errorf("write studio image asset: %w", err)
 		}
 
-		asset, err := s.upsertAsset(ctx, input, requestID, strings.TrimSpace(image.ClientID), index, relativePath, contentType, int64(len(data)), strings.TrimSpace(image.RevisedPrompt), createdAt)
+		thumbnailPath := ""
+		if thumbnail, err := buildStudioImageThumbnail(data); err == nil && len(thumbnail) > 0 {
+			thumbnailPath = buildStudioImageThumbnailRelativePath(relativePath)
+			fullThumbnailPath, err := s.resolveStoragePath(thumbnailPath)
+			if err != nil {
+				return nil, err
+			}
+			if err := os.MkdirAll(filepath.Dir(fullThumbnailPath), 0755); err != nil {
+				return nil, fmt.Errorf("create studio image thumbnail directory: %w", err)
+			}
+			if err := os.WriteFile(fullThumbnailPath, thumbnail, 0644); err != nil {
+				return nil, fmt.Errorf("write studio image thumbnail: %w", err)
+			}
+		}
+
+		asset, err := s.upsertAsset(ctx, input, requestID, strings.TrimSpace(image.ClientID), index, relativePath, thumbnailPath, contentType, int64(len(data)), strings.TrimSpace(image.RevisedPrompt), createdAt)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +175,7 @@ func (s *StudioImageHistoryService) ListByUser(ctx context.Context, userID int64
 	}
 
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, user_id, group_id, request_id, client_id, image_index, model, size, prompt, revised_prompt, content_type, byte_size, created_at
+		SELECT id, user_id, group_id, request_id, client_id, image_index, model, size, prompt, revised_prompt, content_type, byte_size, created_at, thumbnail_path
 		FROM studio_image_assets
 		WHERE user_id = $1
 		ORDER BY created_at DESC, id DESC
@@ -165,6 +193,9 @@ func (s *StudioImageHistoryService) ListByUser(ctx context.Context, userID int64
 			return nil, err
 		}
 		asset.ImageURL = studioImageAssetURL(asset.ID)
+		if asset.ThumbnailURL == "" {
+			asset.ThumbnailURL = asset.ImageURL
+		}
 		assets = append(assets, asset)
 	}
 	if err := rows.Err(); err != nil {
@@ -205,6 +236,41 @@ func (s *StudioImageHistoryService) AssetFile(ctx context.Context, userID int64,
 	return &StudioImageHistoryAssetFile{Path: fullPath, ContentType: contentType}, nil
 }
 
+func (s *StudioImageHistoryService) ThumbnailFile(ctx context.Context, userID int64, assetID int64) (*StudioImageHistoryAssetFile, error) {
+	if s == nil || s.db == nil {
+		return nil, errors.New("studio image history is not configured")
+	}
+
+	var thumbnailPath string
+	err := s.db.QueryRowContext(ctx, `
+		SELECT thumbnail_path
+		FROM studio_image_assets
+		WHERE id = $1 AND user_id = $2
+	`, assetID, userID).Scan(&thumbnailPath)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrStudioImageAssetNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.TrimSpace(thumbnailPath) == "" {
+		return s.AssetFile(ctx, userID, assetID)
+	}
+
+	fullPath, err := s.resolveStoragePath(thumbnailPath)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := os.Stat(fullPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return s.AssetFile(ctx, userID, assetID)
+		}
+		return nil, err
+	}
+	return &StudioImageHistoryAssetFile{Path: fullPath, ContentType: "image/jpeg"}, nil
+}
+
 func (s *StudioImageHistoryService) upsertAsset(
 	ctx context.Context,
 	input StudioImageHistorySaveInput,
@@ -212,6 +278,7 @@ func (s *StudioImageHistoryService) upsertAsset(
 	clientID string,
 	index int,
 	relativePath string,
+	thumbnailPath string,
 	contentType string,
 	byteSize int64,
 	revisedPrompt string,
@@ -226,10 +293,10 @@ func (s *StudioImageHistoryService) upsertAsset(
 	err := s.db.QueryRowContext(ctx, `
 		INSERT INTO studio_image_assets (
 			user_id, group_id, request_id, client_id, image_index, model, size, prompt, revised_prompt,
-			storage_path, content_type, byte_size, created_at
+			storage_path, thumbnail_path, content_type, byte_size, created_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9,
-			$10, $11, $12, $13
+			$10, $11, $12, $13, $14
 		)
 		ON CONFLICT (user_id, request_id, image_index) DO UPDATE SET
 			client_id = EXCLUDED.client_id,
@@ -238,9 +305,10 @@ func (s *StudioImageHistoryService) upsertAsset(
 			prompt = EXCLUDED.prompt,
 			revised_prompt = EXCLUDED.revised_prompt,
 			storage_path = EXCLUDED.storage_path,
+			thumbnail_path = EXCLUDED.thumbnail_path,
 			content_type = EXCLUDED.content_type,
 			byte_size = EXCLUDED.byte_size
-		RETURNING id, user_id, group_id, request_id, client_id, image_index, model, size, prompt, revised_prompt, content_type, byte_size, created_at
+		RETURNING id, user_id, group_id, request_id, client_id, image_index, model, size, prompt, revised_prompt, content_type, byte_size, created_at, thumbnail_path
 	`,
 		input.UserID,
 		groupID,
@@ -252,6 +320,7 @@ func (s *StudioImageHistoryService) upsertAsset(
 		strings.TrimSpace(input.Prompt),
 		revisedPrompt,
 		relativePath,
+		thumbnailPath,
 		contentType,
 		byteSize,
 		createdAt,
@@ -269,6 +338,7 @@ func (s *StudioImageHistoryService) upsertAsset(
 		&asset.ContentType,
 		&asset.ByteSize,
 		&asset.CreatedAt,
+		&thumbnailPath,
 	)
 	if err != nil {
 		return StudioImageHistoryAsset{}, err
@@ -277,6 +347,11 @@ func (s *StudioImageHistoryService) upsertAsset(
 		asset.GroupID = &groupID.Int64
 	}
 	asset.ImageURL = studioImageAssetURL(asset.ID)
+	if strings.TrimSpace(thumbnailPath) != "" {
+		asset.ThumbnailURL = studioImageAssetThumbnailURL(asset.ID)
+	} else {
+		asset.ThumbnailURL = asset.ImageURL
+	}
 	return asset, nil
 }
 
@@ -338,11 +413,53 @@ func buildStudioImageRelativePath(userID int64, createdAt time.Time, data []byte
 	)
 }
 
+func buildStudioImageThumbnailRelativePath(originalPath string) string {
+	extension := filepath.Ext(originalPath)
+	base := strings.TrimSuffix(originalPath, extension)
+	if base == "" {
+		base = originalPath
+	}
+	return base + "-thumb.jpg"
+}
+
+func buildStudioImageThumbnail(data []byte) ([]byte, error) {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	if width <= 0 || height <= 0 {
+		return nil, fmt.Errorf("invalid studio image dimensions")
+	}
+
+	scale := math.Min(
+		float64(studioImageThumbnailMaxDimension)/float64(width),
+		float64(studioImageThumbnailMaxDimension)/float64(height),
+	)
+	if scale > 1 {
+		scale = 1
+	}
+	thumbWidth := max(1, int(math.Round(float64(width)*scale)))
+	thumbHeight := max(1, int(math.Round(float64(height)*scale)))
+	dst := image.NewRGBA(image.Rect(0, 0, thumbWidth, thumbHeight))
+	draw.Draw(dst, dst.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
+	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), img, bounds, draw.Over, nil)
+
+	var buffer bytes.Buffer
+	if err := jpeg.Encode(&buffer, dst, &jpeg.Options{Quality: studioImageThumbnailQuality}); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
 func scanStudioImageAsset(scanner interface {
 	Scan(dest ...any) error
 }) (StudioImageHistoryAsset, error) {
 	var asset StudioImageHistoryAsset
 	var groupID sql.NullInt64
+	var thumbnailPath string
 	if err := scanner.Scan(
 		&asset.ID,
 		&asset.UserID,
@@ -357,15 +474,23 @@ func scanStudioImageAsset(scanner interface {
 		&asset.ContentType,
 		&asset.ByteSize,
 		&asset.CreatedAt,
+		&thumbnailPath,
 	); err != nil {
 		return StudioImageHistoryAsset{}, err
 	}
 	if groupID.Valid {
 		asset.GroupID = &groupID.Int64
 	}
+	if strings.TrimSpace(thumbnailPath) != "" {
+		asset.ThumbnailURL = studioImageAssetThumbnailURL(asset.ID)
+	}
 	return asset, nil
 }
 
 func studioImageAssetURL(id int64) string {
 	return fmt.Sprintf("/api/v1/studio/images/history/%d/content", id)
+}
+
+func studioImageAssetThumbnailURL(id int64) string {
+	return fmt.Sprintf("/api/v1/studio/images/history/%d/thumbnail", id)
 }

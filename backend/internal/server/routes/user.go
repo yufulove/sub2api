@@ -83,6 +83,7 @@ func RegisterUserRoutes(
 			studio.GET("/images/history", h.ListStudioImageHistory)
 			studio.POST("/images/history", h.SaveStudioImageHistory)
 			studio.GET("/images/history/:id/content", h.GetStudioImageHistoryAsset)
+			studio.GET("/images/history/:id/thumbnail", h.GetStudioImageHistoryThumbnail)
 		}
 
 		// 使用记录

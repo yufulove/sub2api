@@ -211,7 +211,8 @@ function serverAssetToSessionCard(asset: StudioImageHistoryAsset): StudioSession
     model: asset.model || 'image',
     size: asset.size || '2K',
     keyName: '服务端历史',
-    imageSrc: asset.image_url
+    imageSrc: asset.image_url,
+    thumbnailSrc: asset.thumbnail_url || asset.image_url
   }
 }
 
@@ -485,7 +486,7 @@ onUnmounted(() => {
           class="session-card"
         >
           <button class="session-image session-image-button" type="button" @click="openPreviewCard(card)">
-            <img :src="card.imageSrc" :alt="card.prompt" loading="lazy" />
+            <img :src="card.thumbnailSrc || card.imageSrc" :alt="card.prompt" loading="lazy" />
             <span>放大查看</span>
           </button>
           <div class="session-body">
@@ -554,9 +555,9 @@ onUnmounted(() => {
                 @click="openPreviewCard(card)"
               >
                 <img
-                :src="card.imageSrc"
-                :alt="card.prompt"
-                loading="lazy"
+                  :src="card.thumbnailSrc || card.imageSrc"
+                  :alt="card.prompt"
+                  loading="lazy"
                 />
               </button>
             </div>

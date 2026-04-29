@@ -47,6 +47,7 @@ export interface StudioImageHistoryAsset {
   prompt: string
   revised_prompt?: string
   image_url: string
+  thumbnail_url?: string
   content_type: string
   byte_size: number
   created_at: string

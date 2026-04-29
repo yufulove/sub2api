@@ -4,23 +4,37 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type studioImageGenerationRequest struct {
 	GroupID int64 `json:"group_id"`
 }
+
+type studioImageHistoryCaptureInput struct {
+	UserID  int64
+	GroupID int64
+	Model   string
+	Size    string
+	Prompt  string
+}
+
+const studioImageCaptureMaxBytes = 192 << 20
 
 // StudioImageGenerations is the image workspace entrypoint for logged-in users.
 // It keeps image generation billed through the existing usage pipeline without
@@ -109,11 +123,22 @@ func (h *Handlers) StudioImageGenerations(c *gin.Context) {
 	c.Request.Header.Set("Content-Type", "application/json")
 	_ = h.APIKey.apiKeyService.TouchLastUsed(c.Request.Context(), apiKey.ID)
 
+	historyInput := studioImageHistoryCaptureInput{
+		UserID:  subject.UserID,
+		GroupID: studioReq.GroupID,
+		Model:   parsed.Model,
+		Size:    parsed.Size,
+		Prompt:  parsed.Prompt,
+	}
 	if apiKey.Group.Platform == service.PlatformOpenAI {
-		h.OpenAIGateway.Images(c)
+		h.forwardStudioImageRequestWithHistory(c, historyInput, func() {
+			h.OpenAIGateway.Images(c)
+		})
 		return
 	}
-	h.Gateway.ImageGenerations(c)
+	h.forwardStudioImageRequestWithHistory(c, historyInput, func() {
+		h.Gateway.ImageGenerations(c)
+	})
 }
 
 // StudioImageEdits edits an existing image through the logged-in Studio entrypoint.
@@ -207,7 +232,15 @@ func (h *Handlers) StudioImageEdits(c *gin.Context) {
 	c.Request.Header.Set("Content-Type", sanitizedContentType)
 	_ = h.APIKey.apiKeyService.TouchLastUsed(c.Request.Context(), apiKey.ID)
 
-	h.OpenAIGateway.Images(c)
+	h.forwardStudioImageRequestWithHistory(c, studioImageHistoryCaptureInput{
+		UserID:  subject.UserID,
+		GroupID: groupID,
+		Model:   parsed.Model,
+		Size:    parsed.Size,
+		Prompt:  parsed.Prompt,
+	}, func() {
+		h.OpenAIGateway.Images(c)
+	})
 }
 
 func sanitizeStudioImageBody(body []byte, canonicalModel string) ([]byte, error) {
@@ -343,6 +376,123 @@ func studioImageGroupSupportsModel(group *service.Group, model string) bool {
 	default:
 		return false
 	}
+}
+
+type studioImageResponseCaptureWriter struct {
+	gin.ResponseWriter
+	body      bytes.Buffer
+	maxBytes  int
+	truncated bool
+}
+
+func (w *studioImageResponseCaptureWriter) Write(data []byte) (int, error) {
+	w.capture(data)
+	return w.ResponseWriter.Write(data)
+}
+
+func (w *studioImageResponseCaptureWriter) WriteString(value string) (int, error) {
+	w.capture([]byte(value))
+	return w.ResponseWriter.WriteString(value)
+}
+
+func (w *studioImageResponseCaptureWriter) capture(data []byte) {
+	if w == nil || w.maxBytes <= 0 || len(data) == 0 {
+		return
+	}
+	remaining := w.maxBytes - w.body.Len()
+	if remaining <= 0 {
+		w.truncated = true
+		return
+	}
+	if len(data) > remaining {
+		w.body.Write(data[:remaining])
+		w.truncated = true
+		return
+	}
+	w.body.Write(data)
+}
+
+func (h *Handlers) forwardStudioImageRequestWithHistory(c *gin.Context, input studioImageHistoryCaptureInput, forward func()) {
+	if c == nil || forward == nil {
+		return
+	}
+
+	originalWriter := c.Writer
+	capture := &studioImageResponseCaptureWriter{
+		ResponseWriter: originalWriter,
+		maxBytes:       studioImageCaptureMaxBytes,
+	}
+	c.Writer = capture
+	defer func() {
+		c.Writer = originalWriter
+	}()
+
+	forward()
+
+	status := capture.Status()
+	if status < http.StatusOK || status >= http.StatusMultipleChoices || capture.truncated || capture.body.Len() == 0 {
+		if capture.truncated {
+			logger.L().With(zap.String("component", "handler.studio_image")).Warn("studio_image.history_capture_truncated")
+		}
+		return
+	}
+	h.persistStudioImageHistoryFromResponse(input, capture.body.Bytes())
+}
+
+func (h *Handlers) persistStudioImageHistoryFromResponse(input studioImageHistoryCaptureInput, responseBody []byte) {
+	if h == nil || h.StudioImageHistory == nil || input.UserID <= 0 || len(responseBody) == 0 {
+		return
+	}
+
+	var response service.OpenAIImageGenerationResponse
+	if err := json.Unmarshal(responseBody, &response); err != nil {
+		logger.L().With(zap.String("component", "handler.studio_image")).Warn("studio_image.history_response_parse_failed", zap.Error(err))
+		return
+	}
+	if response.Created <= 0 {
+		response.Created = time.Now().Unix()
+	}
+
+	images := make([]service.StudioImageHistorySaveImage, 0, len(response.Data))
+	for index, item := range response.Data {
+		if strings.TrimSpace(item.B64JSON) == "" {
+			continue
+		}
+		images = append(images, service.StudioImageHistorySaveImage{
+			ClientID:      fmt.Sprintf("server-%d-%d", response.Created, index),
+			B64JSON:       item.B64JSON,
+			RevisedPrompt: strings.TrimSpace(item.RevisedPrompt),
+		})
+	}
+	if len(images) == 0 {
+		return
+	}
+
+	groupID := input.GroupID
+	requestID := fmt.Sprintf("studio-%d-%d-%d", input.UserID, response.Created, time.Now().UnixNano())
+	saveInput := service.StudioImageHistorySaveInput{
+		UserID:    input.UserID,
+		GroupID:   &groupID,
+		RequestID: requestID,
+		Model:     strings.TrimSpace(input.Model),
+		Size:      strings.TrimSpace(input.Size),
+		Prompt:    strings.TrimSpace(input.Prompt),
+		Created:   response.Created,
+		Images:    images,
+	}
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer cancel()
+		if _, err := h.StudioImageHistory.Save(ctx, saveInput); err != nil {
+			logger.L().With(
+				zap.String("component", "handler.studio_image"),
+				zap.Int64("user_id", input.UserID),
+				zap.Int64("group_id", input.GroupID),
+				zap.String("model", input.Model),
+			).Warn("studio_image.history_save_failed", zap.Error(err))
+		}
+	}()
 }
 
 func studioImageError(c *gin.Context, status int, errType, message string) {

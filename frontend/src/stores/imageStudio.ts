@@ -11,6 +11,7 @@ export interface StudioSessionGeneration {
   size: string
   keyName: string
   imageSrc: string
+  thumbnailSrc?: string
 }
 
 interface PersistedStudioSessionRecord {
@@ -50,7 +51,8 @@ function isStudioSessionGeneration(value: unknown): value is StudioSessionGenera
     typeof candidate.model === 'string' &&
     typeof candidate.size === 'string' &&
     typeof candidate.keyName === 'string' &&
-    typeof candidate.imageSrc === 'string'
+    typeof candidate.imageSrc === 'string' &&
+    (candidate.thumbnailSrc == null || typeof candidate.thumbnailSrc === 'string')
   )
 }
 
@@ -69,7 +71,8 @@ function isStoredStudioSessionMetadata(value: unknown): value is StoredStudioSes
     typeof candidate.model === 'string' &&
     typeof candidate.size === 'string' &&
     typeof candidate.keyName === 'string' &&
-    typeof candidate.imageStoreKey === 'string'
+    typeof candidate.imageStoreKey === 'string' &&
+    (candidate.thumbnailSrc == null || typeof candidate.thumbnailSrc === 'string')
   )
 }
 
@@ -104,6 +107,7 @@ function cardToStoredMetadata(ownerKey: string, card: StudioSessionGeneration): 
     model: card.model,
     size: card.size,
     keyName: card.keyName,
+    thumbnailSrc: card.thumbnailSrc,
     imageStoreKey: imageStorageKey(ownerKey, card.id)
   }
 }
@@ -244,7 +248,8 @@ async function readPersistedGenerations(ownerKey: string): Promise<StudioSession
           model: item.model,
           size: item.size,
           keyName: item.keyName,
-          imageSrc
+          imageSrc,
+          thumbnailSrc: item.thumbnailSrc
         })
       }
       return mergeGenerations(restored, [])

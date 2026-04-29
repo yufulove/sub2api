@@ -142,3 +142,36 @@ func (h *Handlers) GetStudioImageHistoryAsset(c *gin.Context) {
 	c.Header("Content-Type", file.ContentType)
 	c.File(file.Path)
 }
+
+func (h *Handlers) GetStudioImageHistoryThumbnail(c *gin.Context) {
+	if h == nil || h.StudioImageHistory == nil {
+		studioImageError(c, http.StatusInternalServerError, "api_error", "Image history is not configured")
+		return
+	}
+
+	subject, ok := middleware.GetAuthSubjectFromContext(c)
+	if !ok {
+		studioImageError(c, http.StatusUnauthorized, "authentication_error", "Login is required")
+		return
+	}
+
+	assetID, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || assetID <= 0 {
+		studioImageError(c, http.StatusBadRequest, "invalid_request_error", "invalid image id")
+		return
+	}
+
+	file, err := h.StudioImageHistory.ThumbnailFile(c.Request.Context(), subject.UserID, assetID)
+	if errors.Is(err, service.ErrStudioImageAssetNotFound) {
+		studioImageError(c, http.StatusNotFound, "not_found_error", "Image asset not found")
+		return
+	}
+	if err != nil {
+		studioImageError(c, http.StatusInternalServerError, "api_error", "Failed to load image thumbnail")
+		return
+	}
+
+	c.Header("Cache-Control", "private, max-age=3600")
+	c.Header("Content-Type", file.ContentType)
+	c.File(file.Path)
+}
