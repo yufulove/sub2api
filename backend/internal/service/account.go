@@ -506,6 +506,8 @@ func (a *Account) resolveModelMapping(rawMapping map[string]any) map[string]stri
 				"gemini-3.1-pro-high",
 				"gemini-3.1-pro-low",
 			})
+			ensureAntigravityProImageMapping(result, "gemini-3-pro-image", "gemini-3-pro-image")
+			ensureAntigravityProImageMapping(result, "gemini-3-pro-image-preview", "gemini-3-pro-image")
 		}
 		return result
 	}
@@ -566,6 +568,25 @@ func ensureAntigravityDefaultPassthrough(mapping map[string]string, model string
 func ensureAntigravityDefaultPassthroughs(mapping map[string]string, models []string) {
 	for _, model := range models {
 		ensureAntigravityDefaultPassthrough(mapping, model)
+	}
+}
+
+func ensureAntigravityProImageMapping(mapping map[string]string, from, to string) {
+	if mapping == nil || from == "" || to == "" {
+		return
+	}
+	if current, exists := mapping[from]; exists && !isStaleAntigravityProImageTarget(current) {
+		return
+	}
+	mapping[from] = to
+}
+
+func isStaleAntigravityProImageTarget(target string) bool {
+	switch strings.TrimSpace(target) {
+	case "", "gemini-3.1-flash-image", "gemini-3.1-flash-image-preview":
+		return true
+	default:
+		return false
 	}
 }
 

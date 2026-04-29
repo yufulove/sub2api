@@ -452,8 +452,62 @@ func TestAccountGetModelMapping_AntigravityRespectsWildcardOverride(t *testing.T
 	if _, exists := mapping["gemini-3.1-pro-low"]; exists {
 		t.Fatalf("did not expect explicit gemini-3.1-pro-low passthrough when wildcard already exists")
 	}
+	if mapping["gemini-3-pro-image"] != "gemini-3-pro-image" {
+		t.Fatalf("expected gemini-3-pro-image exact mapping to bypass wildcard, got: %q", mapping["gemini-3-pro-image"])
+	}
+	if mapping["gemini-3-pro-image-preview"] != "gemini-3-pro-image" {
+		t.Fatalf("expected gemini-3-pro-image-preview exact mapping to canonical pro image, got: %q", mapping["gemini-3-pro-image-preview"])
+	}
 	if mapped := account.GetMappedModel("gemini-3-flash"); mapped != "gemini-3.1-pro-high" {
 		t.Fatalf("expected wildcard mapping to stay effective, got: %q", mapped)
+	}
+	if mapped := account.GetMappedModel("gemini-3-pro-image"); mapped != "gemini-3-pro-image" {
+		t.Fatalf("expected pro image mapping to bypass wildcard, got: %q", mapped)
+	}
+	if mapped := account.GetMappedModel("gemini-3-pro-image-preview"); mapped != "gemini-3-pro-image" {
+		t.Fatalf("expected pro image preview mapping to canonical pro image, got: %q", mapped)
+	}
+}
+
+func TestAccountGetModelMapping_AntigravityRepairsStaleProImageMapping(t *testing.T) {
+	account := &Account{
+		Platform: PlatformAntigravity,
+		Credentials: map[string]any{
+			"model_mapping": map[string]any{
+				"gemini-3-pro-image":         "gemini-3.1-flash-image",
+				"gemini-3-pro-image-preview": "gemini-3.1-flash-image",
+			},
+		},
+	}
+
+	mapping := account.GetModelMapping()
+	if mapping["gemini-3-pro-image"] != "gemini-3-pro-image" {
+		t.Fatalf("expected stale pro image mapping to be repaired, got: %q", mapping["gemini-3-pro-image"])
+	}
+	if mapping["gemini-3-pro-image-preview"] != "gemini-3-pro-image" {
+		t.Fatalf("expected stale pro image preview mapping to be repaired, got: %q", mapping["gemini-3-pro-image-preview"])
+	}
+	if mapped := account.GetMappedModel("gemini-3-pro-image"); mapped != "gemini-3-pro-image" {
+		t.Fatalf("expected pro image mapping to resolve to pro image, got: %q", mapped)
+	}
+	if mapped := account.GetMappedModel("gemini-3-pro-image-preview"); mapped != "gemini-3-pro-image" {
+		t.Fatalf("expected pro image preview mapping to canonical pro image, got: %q", mapped)
+	}
+}
+
+func TestAccountGetModelMapping_AntigravityPreservesCustomProImageMapping(t *testing.T) {
+	account := &Account{
+		Platform: PlatformAntigravity,
+		Credentials: map[string]any{
+			"model_mapping": map[string]any{
+				"gemini-3-pro-image": "custom-pro-image",
+			},
+		},
+	}
+
+	mapping := account.GetModelMapping()
+	if mapping["gemini-3-pro-image"] != "custom-pro-image" {
+		t.Fatalf("expected custom pro image mapping to be preserved, got: %q", mapping["gemini-3-pro-image"])
 	}
 }
 
