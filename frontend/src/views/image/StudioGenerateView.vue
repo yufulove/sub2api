@@ -201,7 +201,7 @@ const selectedSizeOption = computed(() =>
 )
 
 const availableKeys = computed(() =>
-  apiKeys.value.filter((key) => getKeyAvailability(key).usable)
+  apiKeys.value.filter((key) => getKeyBaseAvailability(key).usable)
 )
 const selectedSetupBoundImageGroup = computed(() => {
   const group = selectedSetupKey.value?.group ?? null
@@ -233,7 +233,7 @@ const imageGroups = computed(() => {
 
 const unavailableKeyReasons = computed(() =>
   apiKeys.value
-    .map((key) => ({ key, availability: getKeyAvailability(key) }))
+    .map((key) => ({ key, availability: getKeyBaseAvailability(key) }))
     .filter((item) => !item.availability.usable)
 )
 const setupKeyOptions = computed<SelectOption[]>(() =>
@@ -263,12 +263,14 @@ const imageGroupOptions = computed<SelectOption[]>(() =>
 
 const keySelectOptions = computed<SelectOption[]>(() =>
   apiKeys.value.map((key) => {
-    const availability = getKeyAvailability(key)
+    const availability = getKeyBaseAvailability(key)
     const groupName = key.group?.name || '未绑定分组'
+    const needsModelSwitch =
+      availability.usable && key.group ? !isGroupCompatibleWithModel(key.group, selectedModel.value) : false
     return {
       value: key.id,
       label: availability.usable
-        ? `${key.name} / ${groupName}`
+        ? `${key.name} / ${groupName}${needsModelSwitch ? ' / 自动切换模型' : ''}`
         : `${key.name} / ${groupName} / ${availability.reason}`,
       disabled: !availability.usable
     }
@@ -365,12 +367,17 @@ watch(
 
 watch(selectedApiKeyId, (value) => {
   persistKeyId(value)
+  const key = selectedKey.value
+  if (key?.group) {
+    ensureModelCompatibleWithGroup(key.group)
+  }
 })
 
 watch(
   selectedModel,
   (value) => {
     ensureSizeCompatibleWithModel(value)
+    selectCompatibleKeyForModel(value)
     persistStoredChoice(IMAGE_STUDIO_MODEL_STORAGE_KEY, value)
   },
   { immediate: true }
@@ -562,7 +569,11 @@ async function handleGenerate() {
     if (isAbortError(error)) {
       return
     }
-    const message = error instanceof Error ? error.message : '图片生成失败。'
+    const message = decorateGenerateError(
+      error instanceof Error ? error.message : '图片生成失败。',
+      apiKey,
+      selectedModel.value
+    )
     generateErrorMessage.value = message
     appStore.showError(message)
   } finally {
@@ -626,6 +637,17 @@ function copyCurrentStudioLink() {
 }
 
 function getKeyAvailability(key: ApiKey): { usable: boolean; reason?: string } {
+  const base = getKeyBaseAvailability(key)
+  if (!base.usable) {
+    return base
+  }
+  if (key.group && !isGroupCompatibleWithModel(key.group, selectedModel.value)) {
+    return { usable: false, reason: `当前模型需要 ${modelGroupRequirementLabel(selectedModel.value)}` }
+  }
+  return { usable: true }
+}
+
+function getKeyBaseAvailability(key: ApiKey): { usable: boolean; reason?: string } {
   if (key.status !== 'active') {
     return { usable: false, reason: statusLabel(key.status) }
   }
@@ -634,9 +656,6 @@ function getKeyAvailability(key: ApiKey): { usable: boolean; reason?: string } {
   }
   if (!isImageCapableGroup(key.group)) {
     return { usable: false, reason: '需绑定图片能力分组' }
-  }
-  if (!isGroupCompatibleWithModel(key.group, selectedModel.value)) {
-    return { usable: false, reason: `当前模型需要 ${modelGroupRequirementLabel(selectedModel.value)}` }
   }
   return { usable: true }
 }
@@ -699,10 +718,56 @@ function ensureModelCompatibleWithGroup(group?: Group | null) {
   if (!group || isGroupCompatibleWithModel(group, selectedModel.value)) {
     return
   }
-  const compatibleModel = imageModelOptions.find((option) => isGroupCompatibleWithModel(group, option.value))
-  if (compatibleModel) {
-    selectedModel.value = compatibleModel.value
+  const preferredModel = preferredModelForGroup(group)
+  if (preferredModel) {
+    selectedModel.value = preferredModel
   }
+}
+
+function preferredModelForGroup(group: Group): string | null {
+  const preferredOrder =
+    group.platform === 'openai'
+      ? ['gpt-image-1', 'gpt-image-1.5', 'gpt-image-2']
+      : [
+          'gemini-3.1-flash-image',
+          'gemini-3.1-flash-image-preview',
+          'gemini-3-pro-image',
+          'gemini-2.5-flash-image',
+          'gemini-2.5-flash-image-preview'
+        ]
+
+  return (
+    preferredOrder.find((model) => isGroupCompatibleWithModel(group, model)) ??
+    imageModelOptions.find((option) => isGroupCompatibleWithModel(group, option.value))?.value ??
+    null
+  )
+}
+
+function selectCompatibleKeyForModel(model: string) {
+  const key = selectedKey.value
+  if (key?.group && getKeyBaseAvailability(key).usable && isGroupCompatibleWithModel(key.group, model)) {
+    return
+  }
+  const compatibleKey = availableKeys.value.find(
+    (item) => item.group && isGroupCompatibleWithModel(item.group, model)
+  )
+  if (compatibleKey) {
+    selectedApiKeyId.value = compatibleKey.id
+  }
+}
+
+function decorateGenerateError(message: string, key: ApiKey, model: string): string {
+  const lowerMessage = message.toLowerCase()
+  const platform = key.group?.platform
+  if (platform === 'antigravity') {
+    if (lowerMessage.includes('requested entity was not found')) {
+      return `当前 Antigravity 上游不支持 ${model}，请选择 OpenAI 图片 Key 或切换 Gemini 图片模型。`
+    }
+    if (lowerMessage.includes('503') || lowerMessage.includes('capacity') || lowerMessage.includes('failover')) {
+      return `当前 Antigravity 上游图片模型容量不足，请稍后重试，或切换到 OpenAI 图片 Key。`
+    }
+  }
+  return message
 }
 
 function statusLabel(status: ApiKey['status']): string {
