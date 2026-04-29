@@ -1,6 +1,7 @@
 import { apiClient } from './client'
 
 export const IMAGE_GENERATION_ENDPOINT = '/studio/images/generations'
+export const IMAGE_EDIT_ENDPOINT = '/studio/images/edits'
 
 export interface ImageGenerationPayload {
   model: string
@@ -21,6 +22,12 @@ export interface ImageGenerationResult {
 
 export interface GenerateImageRequest extends ImageGenerationPayload {
   groupId: number
+  signal?: AbortSignal
+}
+
+export interface EditImageRequest extends ImageGenerationPayload {
+  groupId: number
+  image: Blob
   signal?: AbortSignal
 }
 
@@ -73,5 +80,30 @@ export async function generateImage(request: GenerateImageRequest): Promise<Imag
       throw error
     }
     throw new Error(extractErrorMessage(error, 'Image generation request failed'))
+  }
+}
+
+export async function editImage(request: EditImageRequest): Promise<ImageGenerationResult> {
+  const formData = new FormData()
+  formData.append('group_id', String(request.groupId))
+  formData.append('model', request.model)
+  formData.append('prompt', request.prompt)
+  formData.append('response_format', request.response_format ?? 'b64_json')
+  if (request.size) {
+    formData.append('size', request.size)
+  }
+  formData.append('image', request.image, 'studio-reference.png')
+
+  try {
+    const { data } = await apiClient.post<ImageGenerationResult>(IMAGE_EDIT_ENDPOINT, formData, {
+      signal: request.signal,
+      timeout: 300000
+    })
+    return data
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'ERR_CANCELED') {
+      throw error
+    }
+    throw new Error(extractErrorMessage(error, 'Image edit request failed'))
   }
 }

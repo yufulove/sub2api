@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { userGroupsAPI } from '@/api'
-import { generateImage } from '@/api/image'
+import { editImage, generateImage } from '@/api/image'
 import StudioShell from '@/components/image/StudioShell.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
 import { useClipboard } from '@/composables/useClipboard'
@@ -156,6 +156,8 @@ const selectedSize = ref(
 const prompt = ref(readStoredPrompt(promptSuggestions[0]))
 const isGenerating = ref(false)
 const promptInputRef = ref<HTMLTextAreaElement | null>(null)
+const previewCard = ref<StudioSessionGeneration | null>(null)
+const activeIterationCard = ref<StudioSessionGeneration | null>(null)
 
 let pendingController: AbortController | null = null
 let storedGroupCandidate = readStoredGroupId()
@@ -230,6 +232,12 @@ const canGenerate = computed(() => {
     prompt.value.trim().length > 0 &&
     !isGenerating.value
   )
+})
+const submitButtonLabel = computed(() => {
+  if (isGenerating.value) {
+    return '生成中...'
+  }
+  return activeIterationCard.value && selectedGroup.value?.platform === 'openai' ? '继续编辑图片' : '生成图片'
 })
 
 watch(
@@ -316,13 +324,24 @@ async function handleGenerate() {
   isGenerating.value = true
 
   try {
-    const response = await generateImage({
-      groupId: group.id,
-      model: selectedModel.value,
-      prompt: cleanPrompt,
-      size: selectedSize.value,
-      signal: controller.signal
-    })
+    const editSource = activeIterationCard.value
+    const shouldEditFromImage = !!editSource && group.platform === 'openai'
+    const response = shouldEditFromImage
+      ? await editImage({
+          groupId: group.id,
+          model: selectedModel.value,
+          prompt: cleanPrompt,
+          size: selectedSize.value,
+          image: dataUrlToBlob(editSource.imageSrc),
+          signal: controller.signal
+        })
+      : await generateImage({
+          groupId: group.id,
+          model: selectedModel.value,
+          prompt: cleanPrompt,
+          size: selectedSize.value,
+          signal: controller.signal
+        })
 
     const items = Array.isArray(response.data) ? response.data : []
     const newCards: StudioSessionGeneration[] = items
@@ -343,6 +362,9 @@ async function handleGenerate() {
     }
 
     imageStudioStore.prependGenerations(newCards)
+    if (shouldEditFromImage) {
+      activeIterationCard.value = newCards[0]
+    }
     appStore.showSuccess(`已生成 ${newCards.length} 张图片`)
   } catch (error) {
     if (isAbortError(error)) {
@@ -363,7 +385,14 @@ async function handleGenerate() {
   }
 }
 
-function downloadCard(card: StudioSessionGeneration, index: number) {
+function resolveCardIndex(card: StudioSessionGeneration): number {
+  return Math.max(
+    generationCards.value.findIndex((item) => item.id === card.id),
+    0
+  )
+}
+
+function downloadCard(card: StudioSessionGeneration, index = resolveCardIndex(card)) {
   const link = document.createElement('a')
   link.href = card.imageSrc
   link.download = `${sanitizeFilename(card.model)}-${card.size}-${card.created}-${index + 1}.png`
@@ -376,8 +405,17 @@ function choosePromptSuggestion(value: string) {
   prompt.value = value
 }
 
+function openPreviewCard(card: StudioSessionGeneration) {
+  previewCard.value = card
+}
+
+function closePreviewCard() {
+  previewCard.value = null
+}
+
 async function reuseCardPrompt(card: StudioSessionGeneration) {
-  prompt.value = card.prompt
+  activeIterationCard.value = card
+  prompt.value = buildIterationPrompt(card)
 
   if (imageModelOptions.some((option) => option.value === card.model)) {
     selectedModel.value = card.model
@@ -385,10 +423,34 @@ async function reuseCardPrompt(card: StudioSessionGeneration) {
   if (imageSizeOptions.some((option) => option.value === card.size)) {
     selectedSize.value = card.size
   }
+  const matchingGroup = imageGroups.value.find(
+    (group) => group.name === card.keyName && isGroupCompatibleWithModel(group, card.model)
+  )
+  if (matchingGroup) {
+    selectedGroupId.value = matchingGroup.id
+  }
 
+  previewCard.value = null
   await nextTick()
   promptInputRef.value?.focus()
   promptInputRef.value?.setSelectionRange(prompt.value.length, prompt.value.length)
+  appStore.showSuccess('已载入左侧编辑区，可以继续调试')
+}
+
+function clearActiveIterationCard() {
+  activeIterationCard.value = null
+}
+
+function buildIterationPrompt(card: StudioSessionGeneration): string {
+  const cleanPrompt = card.prompt.trim()
+  const suffix = '继续优化：保留主体构图和风格，调整：'
+  if (!cleanPrompt) {
+    return suffix
+  }
+  if (cleanPrompt.includes('继续优化：')) {
+    return cleanPrompt
+  }
+  return `${cleanPrompt}\n\n${suffix}`
 }
 
 function copyCardPrompt(card: StudioSessionGeneration) {
@@ -561,6 +623,24 @@ function sanitizeFilename(value: string): string {
   return value.replace(/[^a-zA-Z0-9-_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const commaIndex = dataUrl.indexOf(',')
+  if (!dataUrl.startsWith('data:') || commaIndex < 0) {
+    throw new Error('无法读取来源图片')
+  }
+  const metadata = dataUrl.slice(0, commaIndex)
+  const mimeMatch = metadata.match(/^data:([^;]+);base64$/i)
+  if (!mimeMatch) {
+    throw new Error('来源图片格式不支持')
+  }
+  const binary = window.atob(dataUrl.slice(commaIndex + 1))
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return new Blob([bytes], { type: mimeMatch[1] })
+}
+
 function applyRoutePreset() {
   const preset = readComposerPresetFromQuery(
     route.query as Record<string, unknown>,
@@ -616,13 +696,21 @@ function persistGroupId(value: number | null) {
   window.localStorage.setItem(ROUTE_STORAGE_KEY, String(value))
 }
 
+function handleWindowKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && previewCard.value) {
+    closePreviewCard()
+  }
+}
+
 onMounted(() => {
   void imageStudioStore.ensureHydrated()
   void loadGroups()
+  window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onUnmounted(() => {
   pendingController?.abort()
+  window.removeEventListener('keydown', handleWindowKeydown)
 })
 </script>
 
@@ -722,6 +810,21 @@ onUnmounted(() => {
             rows="8"
             placeholder="描述要生成的画面、风格、构图和用途"
           />
+          <div v-if="activeIterationCard" class="iteration-source">
+            <button
+              class="iteration-thumb-button"
+              type="button"
+              aria-label="查看当前迭代来源图片"
+              @click="openPreviewCard(activeIterationCard)"
+            >
+              <img :src="activeIterationCard.imageSrc" :alt="activeIterationCard.prompt" class="iteration-thumb" />
+            </button>
+            <div class="iteration-copy">
+              <strong>继续调试这张图</strong>
+              <span>{{ activeIterationCard.model }} / {{ activeIterationCard.size }} / {{ activeIterationCard.keyName }}</span>
+            </div>
+            <button class="iteration-clear" type="button" @click="clearActiveIterationCard">清除</button>
+          </div>
           <div class="suggestion-list">
             <button
               v-for="suggestion in promptSuggestions"
@@ -746,7 +849,7 @@ onUnmounted(() => {
 
         <div class="submit-row">
           <button class="primary-button" type="submit" :disabled="!canGenerate">
-            {{ isGenerating ? '生成中...' : '生成图片' }}
+            {{ submitButtonLabel }}
           </button>
           <button class="secondary-button" type="button" :disabled="groupsLoading" @click="loadGroups">
             刷新路线
@@ -787,19 +890,27 @@ onUnmounted(() => {
             :key="card.id"
             class="render-card"
           >
-            <img
-              :src="card.imageSrc"
-              :alt="card.prompt"
-              class="render-image"
+            <button
+              class="render-image-button"
+              type="button"
               :style="{ aspectRatio: resolveAspectRatio(card.size) }"
-            />
+              aria-label="放大查看图片"
+              @click="openPreviewCard(card)"
+            >
+              <img
+                :src="card.imageSrc"
+                :alt="card.prompt"
+                class="render-image"
+              />
+              <span class="render-image-action">放大查看</span>
+            </button>
             <div class="render-meta">
               <div>
                 <strong>{{ card.model }}</strong>
                 <span>{{ card.size }} / {{ card.keyName }} / {{ formatCreatedAt(card.created) }}</span>
               </div>
               <div class="render-actions">
-                <button type="button" @click="reuseCardPrompt(card)">复用</button>
+                <button type="button" @click="reuseCardPrompt(card)">继续编辑</button>
                 <button type="button" @click="copyCardPrompt(card)">提示词</button>
                 <button type="button" @click="copyCardStudioLink(card)">链接</button>
                 <button type="button" @click="downloadCard(card, index)">下载</button>
@@ -809,6 +920,51 @@ onUnmounted(() => {
         </div>
       </aside>
     </section>
+
+    <div v-if="previewCard" class="image-lightbox" @click.self="closePreviewCard">
+      <section class="lightbox-panel" role="dialog" aria-modal="true" aria-label="查看生成图片">
+        <div class="lightbox-stage">
+          <img :src="previewCard.imageSrc" :alt="previewCard.prompt" class="lightbox-image" />
+        </div>
+        <aside class="lightbox-sidebar">
+          <div class="lightbox-header">
+            <div>
+              <p class="eyebrow">图片结果</p>
+              <h2>{{ previewCard.model }}</h2>
+            </div>
+            <button class="lightbox-close" type="button" aria-label="关闭预览" @click="closePreviewCard">×</button>
+          </div>
+          <dl class="lightbox-meta">
+            <div>
+              <dt>尺寸</dt>
+              <dd>{{ previewCard.size }}</dd>
+            </div>
+            <div>
+              <dt>路线</dt>
+              <dd>{{ previewCard.keyName }}</dd>
+            </div>
+            <div>
+              <dt>时间</dt>
+              <dd>{{ formatCreatedAt(previewCard.created) }}</dd>
+            </div>
+          </dl>
+          <div class="lightbox-prompt">
+            <strong>提示词</strong>
+            <p>{{ previewCard.prompt }}</p>
+          </div>
+          <div v-if="previewCard.revisedPrompt" class="lightbox-prompt">
+            <strong>上游优化提示词</strong>
+            <p>{{ previewCard.revisedPrompt }}</p>
+          </div>
+          <div class="lightbox-actions">
+            <button class="primary-button" type="button" @click="reuseCardPrompt(previewCard)">继续编辑</button>
+            <button class="secondary-button" type="button" @click="copyCardPrompt(previewCard)">复制提示词</button>
+            <button class="secondary-button" type="button" @click="copyCardStudioLink(previewCard)">复制链接</button>
+            <button class="secondary-button" type="button" @click="downloadCard(previewCard)">下载</button>
+          </div>
+        </aside>
+      </section>
+    </div>
   </main>
 </template>
 
@@ -1000,6 +1156,63 @@ onUnmounted(() => {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
+.iteration-source {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(15, 118, 110, 0.22);
+  border-radius: 8px;
+  background: rgba(15, 118, 110, 0.06);
+}
+
+.iteration-thumb-button {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #edf4f2;
+  cursor: zoom-in;
+}
+
+.iteration-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.iteration-copy {
+  min-width: 0;
+}
+
+.iteration-copy strong,
+.iteration-copy span {
+  display: block;
+}
+
+.iteration-copy span {
+  margin-top: 4px;
+  color: rgba(16, 35, 31, 0.62);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.iteration-clear {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(16, 35, 31, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #10231f;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .suggestion-list {
   display: grid;
   gap: 8px;
@@ -1131,11 +1344,50 @@ onUnmounted(() => {
   background: #ffffff;
 }
 
+.render-image-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: #f3f6f4;
+  cursor: zoom-in;
+}
+
 .render-image {
   display: block;
   width: 100%;
+  height: 100%;
   object-fit: cover;
   background: #f3f6f4;
+}
+
+.render-image-action {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #10231f;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(16, 35, 31, 0.14);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.render-image-button:hover .render-image-action,
+.render-image-button:focus-visible .render-image-action {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .render-meta {
@@ -1164,6 +1416,133 @@ onUnmounted(() => {
   font-size: 0.82rem;
 }
 
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8, 15, 14, 0.72);
+}
+
+.lightbox-panel {
+  width: min(1180px, 100%);
+  max-height: calc(100vh - 48px);
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.32);
+}
+
+.lightbox-stage {
+  min-height: 420px;
+  background: #0b1210;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+}
+
+.lightbox-image {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  object-fit: contain;
+}
+
+.lightbox-sidebar {
+  min-width: 0;
+  padding: 18px;
+  overflow: auto;
+}
+
+.lightbox-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lightbox-header h2 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.lightbox-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(16, 35, 31, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  color: rgba(16, 35, 31, 0.68);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.lightbox-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 18px 0 0;
+}
+
+.lightbox-meta div {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(16, 35, 31, 0.08);
+}
+
+.lightbox-meta dt,
+.lightbox-meta dd {
+  margin: 0;
+}
+
+.lightbox-meta dt {
+  color: rgba(16, 35, 31, 0.58);
+}
+
+.lightbox-meta dd {
+  color: #10231f;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.lightbox-prompt {
+  margin-top: 16px;
+}
+
+.lightbox-prompt strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.lightbox-prompt p {
+  margin: 0;
+  color: rgba(16, 35, 31, 0.72);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.lightbox-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.lightbox-actions .primary-button,
+.lightbox-actions .secondary-button {
+  width: 100%;
+  min-width: 0;
+}
+
 @keyframes studio-loading {
   0% {
     background-position: 0% 50%;
@@ -1176,6 +1555,14 @@ onUnmounted(() => {
 @media (max-width: 980px) {
   .workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lightbox-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .lightbox-stage {
+    min-height: 260px;
   }
 }
 
@@ -1192,6 +1579,31 @@ onUnmounted(() => {
   .size-grid,
   .gallery-grid {
     grid-template-columns: 1fr;
+  }
+
+  .iteration-source {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .iteration-thumb-button {
+    width: 56px;
+    height: 56px;
+  }
+
+  .iteration-clear {
+    grid-column: 1 / -1;
+  }
+
+  .image-lightbox {
+    padding: 10px;
+  }
+
+  .lightbox-panel {
+    max-height: calc(100vh - 20px);
+  }
+
+  .lightbox-sidebar {
+    padding: 14px;
   }
 }
 </style>

@@ -79,6 +79,7 @@ func RegisterUserRoutes(
 		studio := authenticated.Group("/studio")
 		{
 			studio.POST("/images/generations", h.StudioImageGenerations)
+			studio.POST("/images/edits", h.StudioImageEdits)
 		}
 
 		// 使用记录
