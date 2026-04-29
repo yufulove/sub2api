@@ -72,6 +72,21 @@ const imageModelOptions: ImageModelOption[] = [
     value: 'gemini-3-pro-image-preview',
     label: 'Gemini 3 Pro Image Preview',
     description: 'Pro 预览路线'
+  },
+  {
+    value: 'gpt-image-2',
+    label: 'GPT Image 2',
+    description: 'OpenAI 最新图片模型'
+  },
+  {
+    value: 'gpt-image-1.5',
+    label: 'GPT Image 1.5',
+    description: 'OpenAI 图片模型'
+  },
+  {
+    value: 'gpt-image-1',
+    label: 'GPT Image 1',
+    description: 'OpenAI 经典图片模型'
   }
 ]
 
@@ -181,20 +196,34 @@ const selectedSetupKey = computed(() =>
 const generationCards = computed(() => imageStudioStore.sessionGenerations)
 const isSessionHydrating = computed(() => imageStudioStore.isHydrating)
 
+const compatibleSizeOptions = computed(() =>
+  imageSizeOptions.filter((item) => isSizeCompatibleWithModel(item.value, selectedModel.value))
+)
 const selectedSizeOption = computed(() =>
-  imageSizeOptions.find((item) => item.value === selectedSize.value) ?? imageSizeOptions[0]
+  compatibleSizeOptions.value.find((item) => item.value === selectedSize.value) ??
+  compatibleSizeOptions.value[0] ??
+  imageSizeOptions[0]
 )
 
 const availableKeys = computed(() =>
   apiKeys.value.filter((key) => getKeyAvailability(key).usable)
 )
-const imageGroups = computed(() =>
-  availableGroups.value.filter(
-    (group) =>
-      group.status === 'active' &&
-      (group.platform === 'gemini' || group.platform === 'antigravity')
-  )
-)
+const selectedSetupBoundImageGroup = computed(() => {
+  const group = selectedSetupKey.value?.group ?? null
+  return isImageCapableGroup(group) ? group : null
+})
+const selectedSetupBoundImageGroupLabel = computed(() => {
+  const group = selectedSetupBoundImageGroup.value
+  return group ? `${group.name} / ${platformLabel(group.platform)}` : ''
+})
+const imageGroups = computed(() => {
+  const groups = availableGroups.value.filter((group) => isImageCapableGroup(group))
+  const boundGroup = selectedSetupBoundImageGroup.value
+  if (boundGroup && !groups.some((group) => group.id === boundGroup.id)) {
+    groups.push(boundGroup)
+  }
+  return groups
+})
 
 const unavailableKeyReasons = computed(() =>
   apiKeys.value
@@ -210,7 +239,7 @@ const setupKeyOptions = computed<SelectOption[]>(() =>
 const imageGroupOptions = computed<SelectOption[]>(() =>
   imageGroups.value.map((group) => ({
     value: group.id,
-    label: `${group.name} / ${platformLabel(group.platform)}`
+    label: `${group.name} / ${platformLabel(group.platform)}${group.id === selectedSetupBoundImageGroup.value?.id ? ' / 当前绑定' : ''}`
   }))
 )
 
@@ -276,9 +305,10 @@ const estimatedCostLabel = computed(() => {
   })
 })
 
-const canGenerate = computed(() =>
-  !!selectedKey.value && prompt.value.trim().length > 0 && !isGenerating.value
-)
+const canGenerate = computed(() => {
+  const key = selectedKey.value
+  return !!key && getKeyAvailability(key).usable && prompt.value.trim().length > 0 && !isGenerating.value
+})
 const canSubmitKeySetup = computed(() => {
   if (keySetupSubmitting.value || !setupGroupId.value) {
     return false
@@ -316,9 +346,14 @@ watch(selectedApiKeyId, (value) => {
   persistKeyId(value)
 })
 
-watch(selectedModel, (value) => {
-  persistStoredChoice(IMAGE_STUDIO_MODEL_STORAGE_KEY, value)
-})
+watch(
+  selectedModel,
+  (value) => {
+    ensureSizeCompatibleWithModel(value)
+    persistStoredChoice(IMAGE_STUDIO_MODEL_STORAGE_KEY, value)
+  },
+  { immediate: true }
+)
 
 watch(selectedSize, (value) => {
   persistStoredChoice(IMAGE_STUDIO_SIZE_STORAGE_KEY, value)
@@ -428,11 +463,17 @@ async function handleKeySetupSubmit() {
   keySetupErrorMessage.value = ''
 
   try {
-    const savedKey =
-      keySetupMode.value === 'new' || setupKeyId.value == null
-        ? await keysAPI.create(setupKeyName.value.trim(), setupGroupId.value)
-        : await keysAPI.update(setupKeyId.value, { group_id: setupGroupId.value })
+    let savedKey: ApiKey
+    if (keySetupMode.value === 'new' || setupKeyId.value == null) {
+      savedKey = await keysAPI.create(setupKeyName.value.trim(), setupGroupId.value)
+    } else if (selectedSetupKey.value?.group_id === setupGroupId.value) {
+      savedKey = selectedSetupKey.value
+    } else {
+      savedKey = await keysAPI.update(setupKeyId.value, { group_id: setupGroupId.value })
+    }
 
+    const configuredGroup = imageGroups.value.find((group) => group.id === setupGroupId.value) ?? null
+    ensureModelCompatibleWithGroup(configuredGroup)
     await loadKeys()
     selectedApiKeyId.value = savedKey.id
     appStore.showSuccess('图片 API Key 配置已保存')
@@ -563,10 +604,77 @@ function getKeyAvailability(key: ApiKey): { usable: boolean; reason?: string } {
   if (!key.group_id || !key.group) {
     return { usable: false, reason: '未绑定分组' }
   }
-  if (key.group.platform !== 'gemini' && key.group.platform !== 'antigravity') {
-    return { usable: false, reason: '需绑定 Gemini 或 Antigravity 图片分组' }
+  if (!isImageCapableGroup(key.group)) {
+    return { usable: false, reason: '需绑定图片能力分组' }
+  }
+  if (!isGroupCompatibleWithModel(key.group, selectedModel.value)) {
+    return { usable: false, reason: `当前模型需要 ${modelGroupRequirementLabel(selectedModel.value)}` }
   }
   return { usable: true }
+}
+
+function isImageCapableGroup(group?: Group | null): group is Group {
+  return (
+    !!group &&
+    group.status === 'active' &&
+    (group.platform === 'openai' || group.platform === 'gemini' || group.platform === 'antigravity')
+  )
+}
+
+function isOpenAIImageModel(model: string): boolean {
+  return model.toLowerCase().startsWith('gpt-image-')
+}
+
+function isGeminiImageModel(model: string): boolean {
+  const normalized = model.toLowerCase()
+  return normalized.startsWith('gemini-') && normalized.includes('-image')
+}
+
+function isGroupCompatibleWithModel(group: Group, model: string): boolean {
+  if (!isImageCapableGroup(group)) {
+    return false
+  }
+  if (isOpenAIImageModel(model)) {
+    return group.platform === 'openai'
+  }
+  if (isGeminiImageModel(model)) {
+    return group.platform === 'gemini' || group.platform === 'antigravity'
+  }
+  return false
+}
+
+function isSizeCompatibleWithModel(size: string, model: string): boolean {
+  if (!isOpenAIImageModel(model)) {
+    return true
+  }
+  return size !== '4096x4096'
+}
+
+function ensureSizeCompatibleWithModel(model: string) {
+  if (isSizeCompatibleWithModel(selectedSize.value, model)) {
+    return
+  }
+  selectedSize.value = '2048x2048'
+}
+
+function modelGroupRequirementLabel(model: string): string {
+  if (isOpenAIImageModel(model)) {
+    return 'OpenAI 图片分组'
+  }
+  if (isGeminiImageModel(model)) {
+    return 'Gemini 或 Antigravity 图片分组'
+  }
+  return '图片能力分组'
+}
+
+function ensureModelCompatibleWithGroup(group?: Group | null) {
+  if (!group || isGroupCompatibleWithModel(group, selectedModel.value)) {
+    return
+  }
+  const compatibleModel = imageModelOptions.find((option) => isGroupCompatibleWithModel(group, option.value))
+  if (compatibleModel) {
+    selectedModel.value = compatibleModel.value
+  }
 }
 
 function statusLabel(status: ApiKey['status']): string {
@@ -736,7 +844,7 @@ onUnmounted(() => {
           </p>
           <p v-else-if="keysLoading" class="field-note">正在加载 API Key...</p>
           <p v-else class="field-note">
-            请先到主站创建用户 API Key，并绑定 Gemini 或 Antigravity 图片分组。
+            请先创建用户 API Key，并绑定 OpenAI、Gemini 或 Antigravity 图片分组。
           </p>
         </div>
 
@@ -781,7 +889,7 @@ onUnmounted(() => {
             </div>
             <div class="size-grid">
               <button
-                v-for="option in imageSizeOptions"
+                v-for="option in compatibleSizeOptions"
                 :key="option.value"
                 type="button"
                 :class="['size-button', selectedSize === option.value && 'size-button-active']"
@@ -1003,17 +1111,24 @@ onUnmounted(() => {
             :options="imageGroupOptions"
             :disabled="groupsLoading || imageGroupOptions.length === 0"
             searchable
-            placeholder="选择 Gemini 或 Antigravity 图片分组"
+            placeholder="选择 OpenAI、Gemini 或 Antigravity 图片分组"
             search-placeholder="搜索图片分组"
             empty-text="没有可用的图片分组"
           />
         </div>
 
         <div
+          v-if="keySetupMode === 'existing' && selectedSetupBoundImageGroup"
+          class="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-100"
+        >
+          当前 Key 已绑定 {{ selectedSetupBoundImageGroupLabel }}，可以直接保存并使用；需要切换路线时再选择其他图片分组。
+        </div>
+
+        <div
           v-if="imageGroupOptions.length === 0 && !groupsLoading"
           class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100"
         >
-          当前账号没有可绑定的 Gemini 或 Antigravity 图片分组。
+          当前账号没有可绑定的 OpenAI、Gemini 或 Antigravity 图片分组。
         </div>
 
         <div v-if="keySetupErrorMessage" class="alert-box alert-danger">

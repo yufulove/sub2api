@@ -130,7 +130,7 @@ function hasAnyImagePrice(group: Group): boolean {
 }
 
 function isReadyImageGroup(group: Group): boolean {
-  return group.status === 'active' && group.platform !== 'openai' && hasAnyImagePrice(group)
+  return group.status === 'active' && hasAnyImagePrice(group)
 }
 
 function compareGroups(left: Group, right: Group): number {
@@ -183,9 +183,6 @@ function accessLabel(group: Group): string {
 function routeStatus(group: Group): string {
   if (group.status !== 'active') {
     return '分组未启用'
-  }
-  if (group.platform === 'openai') {
-    return 'OpenAI 图片上游暂未接入'
   }
   if (!hasAnyImagePrice(group)) {
     return '未配置图片价格'
