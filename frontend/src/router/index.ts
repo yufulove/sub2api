@@ -166,7 +166,8 @@ const routes: RouteRecordRaw[] = [
     name: 'StudioHome',
     component: () => import('@/views/image/StudioLandingView.vue'),
     meta: {
-      requiresAuth: false,
+      requiresAuth: true,
+      requiresAdmin: true,
       title: 'Image Studio'
     }
   },
@@ -176,7 +177,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/image/StudioGenerateView.vue'),
     meta: {
       requiresAuth: true,
-      requiresAdmin: false,
+      requiresAdmin: true,
       title: 'Create Images'
     }
   },
@@ -186,7 +187,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/image/StudioHistoryView.vue'),
     meta: {
       requiresAuth: true,
-      requiresAdmin: false,
+      requiresAdmin: true,
       title: 'Image History'
     }
   },
@@ -195,7 +196,8 @@ const routes: RouteRecordRaw[] = [
     name: 'StudioPricing',
     component: () => import('@/views/image/StudioPricingView.vue'),
     meta: {
-      requiresAuth: false,
+      requiresAuth: true,
+      requiresAdmin: true,
       title: 'Image Pricing'
     }
   },

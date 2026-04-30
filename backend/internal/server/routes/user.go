@@ -76,7 +76,7 @@ func RegisterUserRoutes(
 			channels.GET("/available", h.AvailableChannel.List)
 		}
 
-		studio := authenticated.Group("/studio")
+		studio := authenticated.Group("/studio", middleware.AdminOnly())
 		{
 			studio.POST("/images/generations", h.StudioImageGenerations)
 			studio.POST("/images/edits", h.StudioImageEdits)
